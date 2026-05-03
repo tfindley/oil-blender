@@ -1,0 +1,203 @@
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { prisma } from '@/lib/prisma'
+import { Button } from '@/components/ui/Button'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { PairingBadge } from '@/components/blend/PairingBadge'
+import { Badge } from '@/components/ui/Badge'
+import { QuantityTable } from '@/components/blend/QuantityTable'
+import { CompatibilityPanel } from '@/components/blend/CompatibilityPanel'
+import { BlendPdfDownload } from '@/components/blend/BlendPdfDownload'
+import { CopyButton } from '@/components/ui/CopyButton'
+import type { BlendDetail, BlendGrade, PairingRating } from '@/types'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const blend = await prisma.blend.findUnique({ where: { id }, select: { name: true } })
+  return { title: blend ? `${blend.name} — Potions & Lotions` : 'Blend Not Found' }
+}
+
+export default async function BlendDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
+  const blend = await prisma.blend.findUnique({
+    where: { id },
+    include: {
+      ingredients: {
+        include: {
+          oil: {
+            select: { id: true, name: true, type: true, benefits: true, contraindications: true, aroma: true },
+          },
+        },
+      },
+    },
+  })
+
+  if (!blend) notFound()
+
+  const oilIds = blend.ingredients.map((i) => i.oilId)
+  const pairingsRaw = await prisma.oilPairing.findMany({
+    where: { oilAId: { in: oilIds }, oilBId: { in: oilIds } },
+    include: {
+      oilA: { select: { id: true, name: true } },
+      oilB: { select: { id: true, name: true } },
+    },
+  })
+
+  const pairings = pairingsRaw
+    .filter((p) => oilIds.includes(p.oilAId) && oilIds.includes(p.oilBId))
+    .map((p) => ({
+      oilAId: p.oilAId,
+      oilAName: p.oilA.name,
+      oilBId: p.oilBId,
+      oilBName: p.oilB.name,
+      rating: p.rating as PairingRating,
+      reason: p.reason,
+    }))
+
+  const blendDetail: BlendDetail = {
+    id: blend.id,
+    name: blend.name,
+    description: blend.description,
+    totalVolumeMl: blend.totalVolumeMl,
+    dilutionRate: blend.dilutionRate,
+    purpose: blend.purpose,
+    notes: blend.notes,
+    grade: blend.grade as BlendGrade,
+    createdAt: blend.createdAt.toISOString(),
+    ingredients: blend.ingredients.map((i) => ({
+      oilId: i.oilId,
+      oilName: i.oil.name,
+      oilType: i.oil.type as 'ESSENTIAL' | 'CARRIER',
+      percentagePct: i.percentagePct,
+      volumeMl: i.volumeMl,
+      drops: Math.round(i.volumeMl * 20),
+      benefits: i.oil.benefits,
+      contraindications: i.oil.contraindications,
+      aroma: i.oil.aroma,
+    })),
+    pairings,
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
+  const shareUrl = `${baseUrl}/blend/${id}`
+
+  const calcIngredients = blendDetail.ingredients.map((i) => ({
+    oilId: i.oilId,
+    name: i.oilName,
+    type: i.oilType,
+    percentagePct: i.percentagePct,
+    volumeMl: i.volumeMl,
+    drops: i.drops,
+    dilutionRateMax: null,
+  }))
+
+  const date = new Date(blend.createdAt).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  })
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      {/* Header */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm text-stone-500">{date}</p>
+          <h1 className="mt-1 font-serif text-3xl font-bold text-stone-900">{blend.name}</h1>
+          {blend.description && <p className="mt-1 text-stone-600">{blend.description}</p>}
+          <div className="mt-2 flex items-center gap-3 text-sm text-stone-500">
+            <span>{blend.totalVolumeMl}ml</span>
+            <span>·</span>
+            <span>{(blend.dilutionRate * 100).toFixed(0)}% dilution</span>
+            <span>·</span>
+            <Badge variant={blend.grade as BlendGrade}>Grade {blend.grade}</Badge>
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <BlendPdfDownload blend={blendDetail} baseUrl={baseUrl} />
+          <Link href="/blend">
+            <Button variant="secondary">Build Another</Button>
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          {/* Quantity table */}
+          <Card>
+            <CardHeader>
+              <h2 className="font-serif text-lg font-semibold text-stone-800">Ingredients</h2>
+            </CardHeader>
+            <CardBody className="p-0">
+              <QuantityTable ingredients={calcIngredients} totalVolumeMl={blend.totalVolumeMl} />
+            </CardBody>
+          </Card>
+
+          {/* Per-oil profiles */}
+          <Card>
+            <CardHeader>
+              <h2 className="font-serif text-lg font-semibold text-stone-800">Oil Profiles</h2>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              {blendDetail.ingredients.map((i) => (
+                <div key={i.oilId} className="rounded-lg border border-stone-100 bg-stone-50 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <Link
+                      href={`/oils/${i.oilId}`}
+                      className="font-serif font-semibold text-stone-800 hover:text-amber-700"
+                    >
+                      {i.oilName}
+                    </Link>
+                    <Badge>{i.oilType === 'CARRIER' ? 'Carrier' : 'Essential Oil'}</Badge>
+                  </div>
+                  <ul className="space-y-0.5">
+                    {i.benefits.slice(0, 4).map((b, idx) => (
+                      <li key={idx} className="text-sm text-stone-600">• {b}</li>
+                    ))}
+                  </ul>
+                  {i.contraindications.length > 0 && (
+                    <p className="mt-2 text-xs text-amber-700">⚠ {i.contraindications[0]}</p>
+                  )}
+                </div>
+              ))}
+            </CardBody>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          {/* Compatibility */}
+          <Card>
+            <CardHeader>
+              <h2 className="font-serif text-lg font-semibold text-stone-800">Compatibility</h2>
+            </CardHeader>
+            <CardBody>
+              <CompatibilityPanel
+                grade={blend.grade as BlendGrade}
+                summary={
+                  blend.grade === 'A'
+                    ? 'All pairings in this blend are compatible.'
+                    : blend.grade === 'B'
+                    ? 'Good blend — some pairings have notes.'
+                    : 'Fair blend — review the pairing notes.'
+                }
+                pairings={pairings}
+              />
+            </CardBody>
+          </Card>
+
+          {/* Share */}
+          <Card>
+            <CardHeader>
+              <h2 className="font-serif text-lg font-semibold text-stone-800">Share This Blend</h2>
+            </CardHeader>
+            <CardBody className="space-y-3">
+              <p className="break-all rounded bg-stone-50 px-3 py-2 font-mono text-xs text-stone-600">
+                {shareUrl}
+              </p>
+              <CopyButton text={shareUrl} />
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
