@@ -11,29 +11,29 @@ export default function AboutPage() {
     <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="mb-10">
         <div className="mb-3 text-4xl">🌿</div>
-        <h1 className="font-serif text-4xl font-bold text-stone-900">About Potions &amp; Lotions</h1>
-        <p className="mt-3 text-lg text-stone-600">
+        <h1 className="font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">About Potions &amp; Lotions</h1>
+        <p className="mt-3 text-lg text-stone-600 dark:text-stone-400">
           A free, open-source tool for building custom massage oil blends with real-time compatibility scoring, safety guidance, and printable recipe cards.
         </p>
       </div>
 
       {/* Purpose */}
       <section className="mb-10">
-        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800">What Is This?</h2>
-        <div className="prose prose-stone max-w-none text-stone-700">
+        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">What Is This?</h2>
+        <div className="space-y-3 text-stone-700 dark:text-stone-300">
           <p>
             Potions &amp; Lotions was built to make aromatherapy blending accessible, safe, and informed. Whether
             you&apos;re a professional massage therapist formulating client blends, or someone creating a relaxing oil
             for personal use, the tool walks you through choosing a carrier oil, adding essential oils, and understanding
             how they interact — all before you mix a single drop.
           </p>
-          <p className="mt-3">
+          <p>
             The compatibility scoring system rates each oil pair as <strong>Excellent</strong>, <strong>Good</strong>,{' '}
             <strong>Caution</strong>, <strong>Avoid</strong>, or <strong>Unsafe</strong>, giving you the context
             you need to blend with confidence. Genuinely dangerous combinations are hard-blocked. Everything else is
             informative, not restrictive.
           </p>
-          <p className="mt-3">
+          <p>
             Every blend gets a permanent shareable URL and a downloadable PDF recipe card with exact quantities,
             oil profiles, and pairing notes — useful for both personal records and client handouts.
           </p>
@@ -42,7 +42,7 @@ export default function AboutPage() {
 
       {/* Features */}
       <section className="mb-10">
-        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800">Features</h2>
+        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Features</h2>
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[
             'Blend builder with live compatibility scoring',
@@ -58,8 +58,8 @@ export default function AboutPage() {
             'Per-oil profiles: benefits, origins, contraindications',
             'Searchable, filterable oil catalog',
           ].map((f) => (
-            <li key={f} className="flex items-start gap-2 text-sm text-stone-700">
-              <span className="mt-0.5 shrink-0 text-amber-600">✓</span>
+            <li key={f} className="flex items-start gap-2 text-sm text-stone-700 dark:text-stone-300">
+              <span className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-500">✓</span>
               {f}
             </li>
           ))}
@@ -67,11 +67,11 @@ export default function AboutPage() {
       </section>
 
       {/* AI Transparency */}
-      <Card className="mb-10 border-amber-200 bg-amber-50">
+      <Card className="mb-10 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50">
         <CardHeader>
-          <h2 className="font-serif text-xl font-semibold text-amber-900">AI &amp; LLM Transparency</h2>
+          <h2 className="font-serif text-xl font-semibold text-amber-900 dark:text-amber-300">AI &amp; LLM Transparency</h2>
         </CardHeader>
-        <CardBody className="space-y-3 text-sm text-amber-900">
+        <CardBody className="space-y-3 text-sm text-amber-900 dark:text-amber-200">
           <p>
             <strong>The oil data in this application was generated using Claude (claude-sonnet-4-6), Anthropic&apos;s AI
             assistant.</strong> This includes botanical descriptions, historical context, benefit profiles,
@@ -98,7 +98,7 @@ export default function AboutPage() {
 
       {/* Tech Stack */}
       <section className="mb-10">
-        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800">Tech Stack</h2>
+        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Tech Stack</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[
             { name: 'Next.js 16', role: 'Framework (App Router, TypeScript)', url: 'https://nextjs.org' },
@@ -110,23 +110,29 @@ export default function AboutPage() {
             { name: 'Anthropic Claude', role: 'Data enrichment (AI)', url: 'https://anthropic.com' },
             { name: 'GitHub Actions', role: 'CI/CD + container registry', url: 'https://github.com/features/actions' },
           ].map((t) => (
-            <div key={t.name} className="rounded-lg border border-stone-200 bg-white p-3">
-              <p className="font-semibold text-stone-800">{t.name}</p>
-              <p className="text-sm text-stone-500">{t.role}</p>
-            </div>
+            <a
+              key={t.name}
+              href={t.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-stone-200 bg-white p-3 transition-colors hover:border-amber-300 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-600"
+            >
+              <p className="font-semibold text-stone-800 dark:text-stone-100">{t.name}</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400">{t.role}</p>
+            </a>
           ))}
         </div>
       </section>
 
       {/* Links */}
       <section className="mb-10">
-        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800">Links</h2>
+        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Links</h2>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <a
             href="https://github.com/tfindley/oils"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-800 transition-colors hover:border-amber-400 hover:bg-amber-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-800 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:hover:border-amber-600 dark:hover:bg-stone-700"
           >
             <span>⭐</span> View Source Code on GitHub
           </a>
@@ -134,24 +140,24 @@ export default function AboutPage() {
             href="https://github.com/tfindley/oils/issues"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-800 transition-colors hover:border-amber-400 hover:bg-amber-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-800 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:hover:border-amber-600 dark:hover:bg-stone-700"
           >
             <span>🐛</span> Report an Issue
           </a>
           <a
-            href="https://ko-fi.com/potionsandlotions"
+            href="https://ko-fi.com/tfindley"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-100"
+            className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/40"
           >
-            <span>☕</span> Support on Ko-Fi
+            <span>☕</span> Support on Ko-fi
           </a>
         </div>
       </section>
 
       {/* Disclaimer */}
-      <div className="rounded-xl border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600">
-        <h3 className="mb-2 font-semibold text-stone-800">Disclaimer</h3>
+      <div className="rounded-xl border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
+        <h3 className="mb-2 font-semibold text-stone-800 dark:text-stone-200">Disclaimer</h3>
         <p>
           The information provided on this site is for educational and general wellness purposes only. It is not
           intended as medical advice and should not replace professional healthcare consultation. Essential oils

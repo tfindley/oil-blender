@@ -3,7 +3,7 @@ import { ThemeToggle } from './ThemeToggle'
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur-sm dark:border-stone-700 dark:bg-stone-950/95">
+    <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-2xl">🌿</span>
