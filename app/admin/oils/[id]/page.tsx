@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { OilForm } from '../../OilForm'
-import { updateOil, deleteOil } from '../../actions'
+import { updateOil } from '../../actions'
+import { DeleteOilButton } from '../../DeleteOilButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,15 +38,7 @@ export default async function EditOilPage({ params }: { params: Promise<{ id: st
           >
             View ↗
           </Link>
-          <form action={deleteOil.bind(null, id)}>
-            <button
-              type="submit"
-              className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-              onClick={(e) => { if (!confirm(`Delete "${oil.name}"? This cannot be undone.`)) e.preventDefault() }}
-            >
-              Delete
-            </button>
-          </form>
+          <DeleteOilButton id={oil.id} name={oil.name} />
         </div>
       </div>
       <OilForm oil={oil} action={boundUpdate} submitLabel="Save Changes" />

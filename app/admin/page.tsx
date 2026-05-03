@@ -18,12 +18,20 @@ export default async function AdminPage() {
           <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">Oil Admin</h1>
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{oils.length} oils in the library</p>
         </div>
-        <Link
-          href="/admin/oils/new"
-          className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800"
-        >
-          + Add Oil
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/oils/new"
+            className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800"
+          >
+            + Add Oil
+          </Link>
+          <a
+            href="/admin/logout"
+            className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+          >
+            Sign Out
+          </a>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800">
