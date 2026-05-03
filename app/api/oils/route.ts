@@ -9,11 +9,17 @@ export async function GET(req: NextRequest) {
   const oils = await prisma.oil.findMany({
     where: {
       ...(type === 'ESSENTIAL' || type === 'CARRIER' ? { type } : {}),
-      ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
+      ...(q ? {
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { botanicalName: { contains: q, mode: 'insensitive' } },
+        ],
+      } : {}),
     },
     select: {
       id: true,
       name: true,
+      botanicalName: true,
       type: true,
       aroma: true,
       benefits: true,
@@ -21,6 +27,9 @@ export async function GET(req: NextRequest) {
       consistency: true,
       absorbency: true,
       dilutionRateMax: true,
+      imageUrl: true,
+      imageAlt: true,
+      buyUrl: true,
     },
     orderBy: [{ type: 'asc' }, { name: 'asc' }],
   })

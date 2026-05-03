@@ -6,14 +6,14 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-stone-50 to-stone-100 px-4 py-20 text-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-stone-50 to-stone-100 px-4 py-20 text-center dark:from-stone-900 dark:via-stone-900 dark:to-stone-800">
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 text-5xl">🌿</div>
-          <h1 className="mb-4 font-serif text-4xl font-bold text-stone-900 sm:text-5xl">
+          <h1 className="mb-4 font-serif text-4xl font-bold text-stone-900 sm:text-5xl dark:text-stone-100">
             Craft Your Perfect <br className="hidden sm:block" />
             Massage Oil Blend
           </h1>
-          <p className="mx-auto mb-8 max-w-xl text-lg text-stone-600">
+          <p className="mx-auto mb-8 max-w-xl text-lg text-stone-600 dark:text-stone-300">
             Combine carrier and essential oils with real-time compatibility scoring, safety guidance, and a downloadable recipe card — all in one place.
           </p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -34,7 +34,7 @@ export default function Home() {
       {/* Features */}
       <section className="px-4 py-16">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-10 text-center font-serif text-2xl font-semibold text-stone-800">
+          <h2 className="mb-10 text-center font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">
             Everything you need to blend with confidence
           </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -73,8 +73,8 @@ export default function Home() {
               <Card key={f.title}>
                 <CardBody>
                   <div className="mb-3 text-3xl">{f.icon}</div>
-                  <h3 className="mb-2 font-serif font-semibold text-stone-800">{f.title}</h3>
-                  <p className="text-sm text-stone-600">{f.body}</p>
+                  <h3 className="mb-2 font-serif font-semibold text-stone-800 dark:text-stone-200">{f.title}</h3>
+                  <p className="text-sm text-stone-600 dark:text-stone-400">{f.body}</p>
                 </CardBody>
               </Card>
             ))}

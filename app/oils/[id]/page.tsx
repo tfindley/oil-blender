@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-
-export const dynamic = 'force-dynamic'
 import { PairingBadge } from '@/components/blend/PairingBadge'
 import { Button } from '@/components/ui/Button'
 import type { PairingRating } from '@/types'
+
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -48,47 +49,67 @@ export default async function OilDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      {/* Back link */}
-      <Link href="/oils" className="mb-6 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800">
+      <Link href="/oils" className="mb-6 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200">
         ← Oil Library
       </Link>
+
+      {/* Hero image */}
+      {oil.imageUrl && (
+        <div className="relative mb-8 h-56 w-full overflow-hidden rounded-xl sm:h-72">
+          <Image
+            src={oil.imageUrl}
+            alt={oil.imageAlt ?? oil.name}
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 896px) 100vw, 896px"
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-3">
-            <h1 className="font-serif text-3xl font-bold text-stone-900">{oil.name}</h1>
+            <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">{oil.name}</h1>
             <Badge variant={oil.type === 'ESSENTIAL' ? 'GOOD' : 'default'}>
               {oil.type === 'ESSENTIAL' ? 'Essential Oil' : 'Carrier Oil'}
             </Badge>
           </div>
-          <p className="text-sm italic text-stone-500">{oil.botanicalName}</p>
-          <p className="mt-1 text-sm text-stone-600">Origin: {oil.origin}</p>
+          <p className="text-sm italic text-stone-500 dark:text-stone-400">{oil.botanicalName}</p>
+          <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">Origin: {oil.origin}</p>
         </div>
-        <Link href={`/blend?oil=${oil.id}`}>
-          <Button>Add to Blend</Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {oil.buyUrl && (
+            <a href={oil.buyUrl} target="_blank" rel="noopener noreferrer sponsored">
+              <Button variant="secondary">Buy this oil ↗</Button>
+            </a>
+          )}
+          <Link href={`/blend?oil=${oil.id}`}>
+            <Button>Add to Blend</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {/* Description */}
           <Card>
-            <CardHeader><h2 className="font-serif font-semibold text-stone-800">About</h2></CardHeader>
+            <CardHeader><h2 className="font-serif font-semibold text-stone-800 dark:text-stone-200">About</h2></CardHeader>
             <CardBody className="space-y-3">
-              <p className="text-sm text-stone-700">{oil.description}</p>
-              <p className="text-sm italic text-stone-500">{oil.history}</p>
+              <p className="text-sm text-stone-700 dark:text-stone-300">{oil.description}</p>
+              <p className="text-sm italic text-stone-500 dark:text-stone-400">{oil.history}</p>
             </CardBody>
           </Card>
 
           {/* Benefits */}
           <Card>
-            <CardHeader><h2 className="font-serif font-semibold text-stone-800">Benefits</h2></CardHeader>
+            <CardHeader><h2 className="font-serif font-semibold text-stone-800 dark:text-stone-200">Benefits</h2></CardHeader>
             <CardBody>
               <ul className="space-y-1.5">
                 {oil.benefits.map((b, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-stone-700">
-                    <span className="mt-0.5 text-amber-600">✓</span>
+                  <li key={i} className="flex items-start gap-2 text-sm text-stone-700 dark:text-stone-300">
+                    <span className="mt-0.5 text-amber-600 dark:text-amber-500">✓</span>
                     {b}
                   </li>
                 ))}
@@ -100,18 +121,18 @@ export default async function OilDetailPage({ params }: { params: Promise<{ id: 
           {pairings.length > 0 && (
             <Card>
               <CardHeader>
-                <h2 className="font-serif font-semibold text-stone-800">Pairings ({pairings.length})</h2>
+                <h2 className="font-serif font-semibold text-stone-800 dark:text-stone-200">Pairings ({pairings.length})</h2>
               </CardHeader>
               <CardBody className="space-y-2">
                 {pairings.map((p) => (
-                  <div key={p.oilId} className="flex items-start gap-3 rounded-lg border border-stone-100 bg-stone-50 p-3">
+                  <div key={p.oilId} className="flex items-start gap-3 rounded-lg border border-stone-100 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-900">
                     <PairingBadge rating={p.rating} className="mt-0.5 shrink-0" />
                     <div>
-                      <Link href={`/oils/${p.oilId}`} className="text-sm font-medium text-stone-800 hover:text-amber-700">
+                      <Link href={`/oils/${p.oilId}`} className="text-sm font-medium text-stone-800 hover:text-amber-700 dark:text-stone-200 dark:hover:text-amber-400">
                         {p.oilName}
                       </Link>
                       {p.rating !== 'GOOD' && (
-                        <p className="mt-0.5 text-xs text-stone-500">{p.reason}</p>
+                        <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{p.reason}</p>
                       )}
                     </div>
                   </div>
@@ -124,31 +145,31 @@ export default async function OilDetailPage({ params }: { params: Promise<{ id: 
         {/* Right sidebar */}
         <div className="space-y-6">
           <Card>
-            <CardHeader><h2 className="font-serif font-semibold text-stone-800">Properties</h2></CardHeader>
+            <CardHeader><h2 className="font-serif font-semibold text-stone-800 dark:text-stone-200">Properties</h2></CardHeader>
             <CardBody>
               <dl className="space-y-3 text-sm">
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-stone-400">Aroma</dt>
-                  <dd className="mt-0.5 italic text-stone-700">{oil.aroma}</dd>
+                  <dd className="mt-0.5 italic text-stone-700 dark:text-stone-300">{oil.aroma}</dd>
                 </div>
                 {oil.type === 'CARRIER' && (
                   <>
                     {oil.consistency && (
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-stone-400">Consistency</dt>
-                        <dd className="mt-0.5 capitalize text-stone-700">{oil.consistency}</dd>
+                        <dd className="mt-0.5 capitalize text-stone-700 dark:text-stone-300">{oil.consistency}</dd>
                       </div>
                     )}
                     {oil.absorbency && (
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-stone-400">Absorbency</dt>
-                        <dd className="mt-0.5 capitalize text-stone-700">{oil.absorbency}</dd>
+                        <dd className="mt-0.5 capitalize text-stone-700 dark:text-stone-300">{oil.absorbency}</dd>
                       </div>
                     )}
                     {oil.shelfLifeMonths != null && (
                       <div>
                         <dt className="text-xs font-medium uppercase tracking-wide text-stone-400">Shelf Life</dt>
-                        <dd className="mt-0.5 text-stone-700">{oil.shelfLifeMonths} months</dd>
+                        <dd className="mt-0.5 text-stone-700 dark:text-stone-300">{oil.shelfLifeMonths} months</dd>
                       </div>
                     )}
                   </>
@@ -156,7 +177,7 @@ export default async function OilDetailPage({ params }: { params: Promise<{ id: 
                 {oil.type === 'ESSENTIAL' && oil.dilutionRateMax != null && (
                   <div>
                     <dt className="text-xs font-medium uppercase tracking-wide text-stone-400">Max Dilution</dt>
-                    <dd className="mt-0.5 text-stone-700">{(oil.dilutionRateMax * 100).toFixed(0)}%</dd>
+                    <dd className="mt-0.5 text-stone-700 dark:text-stone-300">{(oil.dilutionRateMax * 100).toFixed(0)}%</dd>
                   </div>
                 )}
               </dl>
@@ -166,12 +187,12 @@ export default async function OilDetailPage({ params }: { params: Promise<{ id: 
           {oil.contraindications.length > 0 && (
             <Card>
               <CardHeader>
-                <h2 className="font-serif font-semibold text-amber-800">Contraindications</h2>
+                <h2 className="font-serif font-semibold text-amber-800 dark:text-amber-500">Contraindications</h2>
               </CardHeader>
               <CardBody>
                 <ul className="space-y-1.5">
                   {oil.contraindications.map((c, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-amber-800">
+                    <li key={i} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-400">
                       <span className="mt-0.5 shrink-0">⚠</span>
                       {c}
                     </li>

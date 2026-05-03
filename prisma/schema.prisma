@@ -35,6 +35,8 @@ model Oil {
   shelfLifeMonths   Int?
   dilutionRateMax   Float?
   buyUrl            String?
+  imageUrl          String?
+  imageAlt          String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
