@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+
+export const dynamic = 'force-dynamic'
 import { PairingBadge } from '@/components/blend/PairingBadge'
 import { Badge } from '@/components/ui/Badge'
 import { QuantityTable } from '@/components/blend/QuantityTable'

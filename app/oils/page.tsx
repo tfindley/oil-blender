@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { OilCard } from '@/components/oils/OilCard'
 import type { OilSummary } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Oil Library — Potions & Lotions',
   description: 'Browse 30 essential oils and 15 carrier oils with benefits, origins, and pairing information.',
