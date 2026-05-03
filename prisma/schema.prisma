@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OilType {
+  ESSENTIAL
+  CARRIER
+}
+
+enum PairingRating {
+  EXCELLENT
+  GOOD
+  CAUTION
+  AVOID
+  UNSAFE
+}
+
+model Oil {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  botanicalName     String
+  type              OilType
+  origin            String
+  history           String   @db.Text
+  description       String   @db.Text
+  benefits          String[]
+  contraindications String[]
+  aroma             String
+  consistency       String?
+  absorbency        String?
+  shelfLifeMonths   Int?
+  dilutionRateMax   Float?
+  buyUrl            String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  pairsWithA       OilPairing[]     @relation("OilA")
+  pairsWithB       OilPairing[]     @relation("OilB")
+  blendIngredients BlendIngredient[]
+}
+
+model OilPairing {
+  id     String        @id @default(cuid())
+  oilAId String
+  oilBId String
+  rating PairingRating @default(GOOD)
+  reason String
+
+  oilA Oil @relation("OilA", fields: [oilAId], references: [id], onDelete: Cascade)
+  oilB Oil @relation("OilB", fields: [oilBId], references: [id], onDelete: Cascade)
+
+  @@unique([oilAId, oilBId])
+}
+
+model Blend {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  totalVolumeMl Float
+  dilutionRate  Float
+  purpose       String?
+  notes         String?
+  grade         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ingredients BlendIngredient[]
+}
+
+model BlendIngredient {
+  id            String @id @default(cuid())
+  blendId       String
+  oilId         String
+  percentagePct Float
+  volumeMl      Float
+
+  blend Blend @relation(fields: [blendId], references: [id], onDelete: Cascade)
+  oil   Oil   @relation(fields: [oilId], references: [id], onDelete: Restrict)
+
+  @@unique([blendId, oilId])
+}
