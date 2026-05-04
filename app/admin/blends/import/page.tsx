@@ -1,7 +1,7 @@
 import { BlendImportForm } from './BlendImportForm'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Promote Blend — Admin — Potions & Lotions' }
+export const metadata = { title: 'Promote Blend — Admin' }
 
 export default function AdminBlendsImportPage() {
   return (

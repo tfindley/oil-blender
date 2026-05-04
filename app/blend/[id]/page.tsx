@@ -16,7 +16,7 @@ import type { BlendDetail, BlendGrade, PairingRating } from '@/types'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const blend = await prisma.blend.findUnique({ where: { id }, select: { name: true } })
-  return { title: blend ? `${blend.name} — Potions & Lotions` : 'Blend Not Found' }
+  return { title: blend ? blend.name : 'Blend Not Found' }
 }
 
 export default async function BlendDetailPage({ params }: { params: Promise<{ id: string }> }) {

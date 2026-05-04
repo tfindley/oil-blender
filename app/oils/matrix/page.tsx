@@ -6,7 +6,7 @@ import { buildPairingMap } from '@/lib/pairing-utils'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Compatibility Matrix — Potions & Lotions',
+  title: 'Compatibility Matrix',
   description: 'See how every oil pairs with every other oil — colour-coded by compatibility rating.',
 }
 

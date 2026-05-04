@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/Badge'
 import { AdminBlendActions } from './AdminBlendActions'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Blends — Admin — Potions & Lotions' }
+export const metadata = { title: 'Blends — Admin' }
 
 export default async function AdminBlendsPage() {
   const blends = await prisma.blend.findMany({

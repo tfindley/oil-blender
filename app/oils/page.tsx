@@ -6,7 +6,7 @@ import type { OilSummary } from '@/types'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Oil Library — Potions & Lotions',
+  title: 'Oil Library',
   description: 'Browse 30 essential oils and 15 carrier oils with benefits, origins, and pairing information.',
 }
 

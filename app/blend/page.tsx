@@ -5,7 +5,7 @@ import type { OilSummary } from '@/types'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Build a Blend — Potions & Lotions',
+  title: 'Build a Blend',
   description: 'Create a custom massage oil blend with compatibility scoring and a printable recipe card.',
 }
 

@@ -2,16 +2,33 @@ import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 
 export const metadata = {
-  title: 'About — Potions & Lotions',
-  description: 'About Potions & Lotions — an open-source massage oil blend builder.',
+  title: 'About',
+  description: 'About this massage oil blend builder — compatibility scoring, safety guidance, and printable recipe cards.',
 }
+
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Potions & Lotions'
+const isCustomName = siteName !== 'Potions & Lotions'
 
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="mb-10">
         <div className="mb-3 text-4xl">🌿</div>
-        <h1 className="font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">About Potions &amp; Lotions</h1>
+        <h1 className="font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">About {siteName}</h1>
+        {isCustomName && (
+          <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
+            Powered by{' '}
+            <a
+              href="https://github.com/tfindley/oil-blender"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-amber-700 hover:underline dark:text-amber-500"
+            >
+              Potions &amp; Lotions
+            </a>
+            {' '}— open-source massage oil blend builder
+          </p>
+        )}
         <p className="mt-3 text-lg text-stone-600 dark:text-stone-400">
           A free, open-source tool for building custom massage oil blends with real-time compatibility scoring, safety guidance, and printable recipe cards.
         </p>
@@ -22,7 +39,8 @@ export default function AboutPage() {
         <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">What Is This?</h2>
         <div className="space-y-3 text-stone-700 dark:text-stone-300">
           <p>
-            Potions &amp; Lotions was built to make aromatherapy blending accessible, safe, and informed. Whether
+            <a href="https://github.com/tfindley/oil-blender" target="_blank" rel="noopener noreferrer" className="font-medium text-amber-700 hover:underline dark:text-amber-500">Potions &amp; Lotions</a>{' '}
+            was built to make aromatherapy blending accessible, safe, and informed. Whether
             you&apos;re a professional massage therapist formulating client blends, or someone creating a relaxing oil
             for personal use, the tool walks you through choosing a carrier oil, adding essential oils, and understanding
             how they interact — all before you mix a single drop.

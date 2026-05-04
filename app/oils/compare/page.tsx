@@ -6,7 +6,7 @@ import { buildPairingMap } from '@/lib/pairing-utils'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Oil Compatibility — Potions & Lotions',
+  title: 'Oil Compatibility',
   description: 'Compare any two oils side-by-side: see their full profiles and how well they work together.',
 }
 

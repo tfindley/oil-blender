@@ -7,7 +7,7 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-2xl">🌿</span>
-          <span className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-100">Potions &amp; Lotions</span>
+          <span className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-100">{process.env.NEXT_PUBLIC_SITE_NAME || 'Potions & Lotions'}</span>
         </Link>
         <div className="flex items-center gap-1">
           <nav className="flex items-center gap-1">

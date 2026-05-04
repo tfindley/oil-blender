@@ -10,6 +10,8 @@ import {
 } from '@react-pdf/renderer'
 import type { BlendDetail } from '@/types'
 
+const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'Potions & Lotions'
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
@@ -207,11 +209,11 @@ export function BlendReport({ blend, baseUrl, qrDataUrl }: BlendReportProps) {
   const notablePairings = blend.pairings.filter((p) => p.rating !== 'GOOD')
 
   return (
-    <Document title={`${blend.name} — Potions & Lotions`} author="Potions & Lotions">
+    <Document title={`${blend.name} — ${SITE_NAME}`} author={SITE_NAME}>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.brand}>Potions &amp; Lotions</Text>
+          <Text style={styles.brand}>{SITE_NAME}</Text>
           <Text style={styles.title}>{blend.name}</Text>
           <Text style={styles.subtitle}>
             Created {date} · {blend.totalVolumeMl}ml · {(blend.dilutionRate * 100).toFixed(0)}% dilution
@@ -324,7 +326,7 @@ export function BlendReport({ blend, baseUrl, qrDataUrl }: BlendReportProps) {
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>Always patch test. Not medical advice.</Text>
-          <Text style={styles.footerText}>Potions &amp; Lotions · {shareUrl}</Text>
+          <Text style={styles.footerText}>{SITE_NAME} · {shareUrl}</Text>
         </View>
       </Page>
     </Document>

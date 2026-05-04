@@ -4,7 +4,7 @@ import { BlendCard } from '@/components/blends/BlendCard'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Blends — Potions & Lotions',
+  title: 'Blends',
   description: 'Explore curated massage oil blends crafted by our community.',
 }
 

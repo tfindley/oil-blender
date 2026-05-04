@@ -11,8 +11,13 @@ const lora = Lora({
   display: 'swap',
 })
 
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Potions & Lotions'
+
 export const metadata: Metadata = {
-  title: 'Potions & Lotions — Massage Oil Blend Builder',
+  title: {
+    default: siteName,
+    template: `%s — ${siteName}`,
+  },
   description: 'Create custom massage oil blends with compatibility ratings, safety guidance, and printable recipe cards.',
 }
 

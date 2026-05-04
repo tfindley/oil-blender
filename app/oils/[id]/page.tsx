@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const oil = await prisma.oil.findUnique({ where: { id }, select: { name: true } })
-  return { title: oil ? `${oil.name} — Potions & Lotions` : 'Oil Not Found' }
+  return { title: oil ? oil.name : 'Oil Not Found' }
 }
 
 export default async function OilDetailPage({ params }: { params: Promise<{ id: string }> }) {

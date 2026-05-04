@@ -4,6 +4,15 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.0.9] — 2026-05-04
+
+### Fixed
+- `ADMIN_SECRET` and `CRON_SECRET` were not forwarded to the app container in `docker-compose.yml`, causing the admin panel to be accessible without a password (proxy saw `undefined` secret and allowed all requests through)
+- Renamed `package.json` package name from `oils` to `oil-blender` to eliminate grype false positive (GHSA-v279-v2xm-whq9)
+- Dockerfile runner stage now runs `apk upgrade` to pick up patched BusyBox (CVE-2025-60876)
+- Renamed `middleware.ts` → `proxy.ts` and exported function `middleware` → `proxy` (Next.js 16 deprecation)
+- Added `data-scroll-behavior="smooth"` to `<html>` element (Next.js 16 scroll behaviour change)
+
 ## [0.0.8] — 2026-05-04
 
 ### Changed

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/Badge'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Admin — Potions & Lotions' }
+export const metadata = { title: 'Admin' }
 
 export default async function AdminPage() {
   const oils = await prisma.oil.findMany({
