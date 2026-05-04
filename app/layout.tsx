@@ -20,7 +20,7 @@ const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${lora.variable} h-full antialiased`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${lora.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-stone-50 text-stone-900 dark:bg-stone-900 dark:text-stone-100">
         {gaId && <GoogleAnalytics gaId={gaId} />}
         <Header />

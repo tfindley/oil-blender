@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const secret = process.env.ADMIN_SECRET
   if (!secret) return // no secret set — admin open (dev/local only)
 
