@@ -3,6 +3,7 @@
 **A free, open-source massage oil blend builder with real-time compatibility scoring, safety guidance, and printable recipe cards.**
 
 [![Release](https://img.shields.io/github/v/release/tfindley/oil-blender)](https://github.com/tfindley/oil-blender/releases)
+[![Build](https://github.com/tfindley/oil-blender/actions/workflows/release.yml/badge.svg)](https://github.com/tfindley/oil-blender/actions/workflows/release.yml)
 [![Docker](https://img.shields.io/badge/ghcr.io-tfindley%2Foil-blender-blue)](https://github.com/tfindley/oil-blender/pkgs/container/oil-blender)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -100,8 +101,9 @@ Images are published to the GitHub Container Registry on every tagged release:
 
 ```bash
 docker pull ghcr.io/tfindley/oil-blender:latest
-docker pull ghcr.io/tfindley/oil-blender:v0.0.10
 ```
+
+Specific version tags (e.g. `v0.0.11`) are also available — see [Releases](https://github.com/tfindley/oil-blender/releases).
 
 ---
 

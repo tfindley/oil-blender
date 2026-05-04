@@ -4,6 +4,18 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.0.12] — 2026-05-04
+
+### Added
+- **Admin Database panel** at `/admin/database` — seed the database or run AI enrichment directly from the browser without SSH or CLI access
+- Seed action runs synchronously and reports oils/pairings upserted; enrichment spawns as a background process (takes several minutes — check server logs)
+- Enrich button is only shown when `ANTHROPIC_API_KEY` is set on the server; shows a disabled state with instructions otherwise
+- Live stats card showing current oil, pairing, and blend counts
+- Database nav link added to Oils and Blends admin pages
+
+### Changed
+- README: added CI/CD pipeline status badge; specific version pinned in Docker pull example replaced with a link to Releases page
+
 ## [0.0.11] — 2026-05-04
 
 ### Added
@@ -120,7 +132,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.11...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.12...HEAD
+[0.0.12]: https://github.com/tfindley/oil-blender/compare/v0.0.11...v0.0.12
 [0.0.11]: https://github.com/tfindley/oil-blender/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/tfindley/oil-blender/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/tfindley/oil-blender/compare/v0.0.8...v0.0.9

@@ -188,7 +188,14 @@ oil-blender/
 docker build -t oil-blender .
 ```
 
-The build compiles seed and enrichment scripts to plain JS (via esbuild) so they can be run inside the container without any Node toolchain.
+The build compiles seed and enrichment scripts to plain JS (via esbuild) so they can be run inside the container without any Node toolchain:
+
+```bash
+docker compose exec app node scripts/seed.js
+docker compose exec -e ANTHROPIC_API_KEY=sk-ant-... app node scripts/enrich.js
+```
+
+Alternatively, use the **Admin → Database** panel at `/admin/database` to trigger either operation from the browser.
 
 ---
 
