@@ -351,10 +351,26 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
             )}
           </CardBody>
         </Card>
+
+        {/* Quantities — full-width so table columns have room */}
+        {calc.ingredients.length > 0 && (
+          <Card>
+            <CardHeader>
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Quantities</h2>
+            </CardHeader>
+            <CardBody className="p-0">
+              <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
+            </CardBody>
+          </Card>
+        )}
+
+        {calc.warnings.map((w, i) => (
+          <Alert key={i} variant="caution">{w}</Alert>
+        ))}
       </div>
 
       {/* ── Right column: live blend summary ── */}
-      <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+      <div className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:pr-0.5">
 
         {/* Blend composition */}
         <Card>
@@ -482,18 +498,6 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
               )}
             </div>
 
-            {/* Quantities */}
-            {calc.ingredients.length > 0 && (
-              <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Quantities</p>
-                <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
-              </div>
-            )}
-
-            {/* Warnings */}
-            {calc.warnings.map((w, i) => (
-              <Alert key={i} variant="caution">{w}</Alert>
-            ))}
           </CardBody>
         </Card>
 
