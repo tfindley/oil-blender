@@ -6,8 +6,8 @@ export const metadata = {
   description: 'About this massage oil blend builder — compatibility scoring, safety guidance, and printable recipe cards.',
 }
 
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Potions & Lotions'
-const isCustomName = siteName !== 'Potions & Lotions'
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Oil Blender'
+const isCustomName = siteName !== 'Oil Blender'
 
 export default function AboutPage() {
   return (
@@ -24,7 +24,7 @@ export default function AboutPage() {
               rel="noopener noreferrer"
               className="font-medium text-amber-700 hover:underline dark:text-amber-500"
             >
-              Potions &amp; Lotions
+              Oil Blender
             </a>
             {' '}— open-source massage oil blend builder
           </p>
@@ -39,7 +39,7 @@ export default function AboutPage() {
         <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">What Is This?</h2>
         <div className="space-y-3 text-stone-700 dark:text-stone-300">
           <p>
-            <a href="https://github.com/tfindley/oil-blender" target="_blank" rel="noopener noreferrer" className="font-medium text-amber-700 hover:underline dark:text-amber-500">Potions &amp; Lotions</a>{' '}
+            <a href="https://github.com/tfindley/oil-blender" target="_blank" rel="noopener noreferrer" className="font-medium text-amber-700 hover:underline dark:text-amber-500">Oil Blender</a>{' '}
             was built to make aromatherapy blending accessible, safe, and informed. Whether
             you&apos;re a professional massage therapist formulating client blends, or someone creating a relaxing oil
             for personal use, the tool walks you through choosing a carrier oil, adding essential oils, and understanding

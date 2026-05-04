@@ -11,7 +11,7 @@ const lora = Lora({
   display: 'swap',
 })
 
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Potions & Lotions'
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Oil Blender'
 
 export const metadata: Metadata = {
   title: {

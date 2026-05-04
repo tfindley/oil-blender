@@ -1,0 +1,233 @@
+# Development Guide
+
+This guide covers setting up Oil Blender for local development: running from source, making schema changes, and using the enrichment pipeline.
+
+For deploying the pre-built container image, see the main [README](../README.md).
+
+---
+
+## Prerequisites
+
+- Node.js 20+
+- PostgreSQL 16 (or Docker for local dev)
+- An Anthropic API key (only needed to run the enrichment script)
+
+---
+
+## Setup
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/tfindley/oil-blender.git
+cd oil-blender
+npm install
+npx prisma generate
+```
+
+> `npx prisma generate` must be run once after install, and again after any schema change. The error `Cannot find module '.prisma/client/default'` means this step was skipped.
+
+### 2. Configure Environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+# Required
+DATABASE_URL="postgresql://oils:oils@localhost:5432/oils"
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+ADMIN_SECRET="your-strong-admin-password"
+CRON_SECRET="your-strong-cron-secret"
+
+# Optional
+NEXT_PUBLIC_SITE_NAME="Oil Blender"
+NEXT_PUBLIC_GA_MEASUREMENT_ID="G-XXXXXXXXXX"   # omit to disable analytics
+ANTHROPIC_API_KEY="sk-ant-..."                  # only needed for npm run enrich
+```
+
+### 3. Start PostgreSQL
+
+**With Docker (starts a PostgreSQL container only):**
+```bash
+docker compose up postgres -d
+```
+
+**With an existing PostgreSQL install:**
+```bash
+psql -U postgres -c "CREATE USER oils WITH PASSWORD 'oils' CREATEDB;"
+psql -U postgres -c "CREATE DATABASE oils OWNER oils;"
+```
+
+### 4. Run Migrations
+
+```bash
+node scripts/migrate.js
+```
+
+### 5. Seed the Database
+
+**Option A — Quick seed (no API key needed):**
+```bash
+npm run seed
+```
+This loads 55 oils and ~96 curated pairings from `scripts/seed.ts`.
+
+**Option B — Full AI enrichment (requires Anthropic API key):**
+```bash
+npm run enrich
+```
+This calls Claude to generate richer descriptions and a complete pairing matrix for all oils. The enrichment is idempotent — safe to re-run.
+
+### 6. Start the Dev Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Schema Changes
+
+1. Edit `prisma/schema.prisma`
+2. Create a new migration file in `prisma/migrations/<timestamp>_<name>/migration.sql`
+3. Run `node scripts/migrate.js` to apply it
+4. Run `npx prisma generate` to regenerate the client
+
+The migration runner (`scripts/migrate.js`) tracks applied migrations in `_prisma_migrations` — the same table Prisma CLI uses, so the two approaches are interchangeable.
+
+---
+
+## Enrichment Pipeline
+
+`npm run enrich` runs a three-pass pipeline:
+
+| Pass | What it does |
+|------|------|
+| **Pass 1** | Calls Claude API for each oil — generates full data including pairings |
+| **Pass 2** | Resolves pairing oil names → database IDs; upserts pairing records |
+| **Pass 3** | Applies UNSAFE overrides from `scripts/unsafe-pairs.ts` (hand-curated) |
+
+- Rate-limited to 3 concurrent API calls (`p-limit`)
+- Fully idempotent — safe to re-run after failures
+- Approximate cost: ~$0.05–0.15 USD for a full enrichment run
+- Uses `claude-sonnet-4-6` by default — change the model constant in `scripts/enrich-oils.ts` if needed
+
+---
+
+## Project Structure
+
+```
+oil-blender/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx            # Homepage (hero + featured blends + feature grid)
+│   ├── blend/              # Blend builder + saved blend detail
+│   ├── blends/             # Public featured blends listing
+│   ├── oils/               # Oil catalog + individual oil pages
+│   ├── about/              # About page (privacy, analytics, tech stack)
+│   ├── admin/              # Admin panel (oils + blends management)
+│   │   ├── page.tsx        # Oil list
+│   │   ├── oils/           # Oil create/edit
+│   │   └── blends/         # Blend list, edit, import/promote
+│   └── api/                # REST API + cron routes
+│       ├── blends/         # Create / fetch blends
+│       ├── oils/           # Oil data
+│       ├── pairings/       # Pairing queries
+│       └── cron/purge/     # Auto-purge endpoint
+├── components/
+│   ├── analytics/          # GoogleAnalytics component
+│   ├── ui/                 # Button, Badge, Card, Input, Alert, CopyButton
+│   ├── layout/             # Header, Footer
+│   ├── blend/              # BlendBuilder, CompatibilityPanel, QuantityTable…
+│   ├── blends/             # BlendCard (public-facing)
+│   ├── oils/               # OilCard
+│   └── pdf/                # BlendReport (@react-pdf/renderer)
+├── lib/
+│   ├── prisma.ts           # Prisma client singleton
+│   ├── blend-calculator.ts # Volume/drop calculations
+│   ├── blend-scorer.ts     # A–F blend grading
+│   └── pairing-utils.ts    # Shared pairing key / map utilities
+├── scripts/
+│   ├── migrate.js          # Lightweight migration runner (uses pg, no Prisma CLI)
+│   ├── oil-definitions.ts  # Oil name list
+│   ├── unsafe-pairs.ts     # Hand-curated UNSAFE combinations
+│   ├── seed.ts             # Seed with built-in oil data (no API key needed)
+│   └── enrich-oils.ts      # Claude AI enrichment pipeline
+├── types/index.ts          # Shared TypeScript types
+├── prisma/
+│   ├── schema.prisma       # Database schema
+│   └── migrations/         # SQL migration files
+├── .env.example            # Environment variable template
+├── Dockerfile              # Multi-stage production build
+└── .github/workflows/
+    └── release.yml         # Tag-triggered build + push + release
+```
+
+---
+
+## API Reference
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/oils` | List oils — `?type=ESSENTIAL\|CARRIER&q=search` |
+| `GET` | `/api/oils/[id]` | Single oil with all pairings |
+| `GET` | `/api/pairings` | `?oilIds=id1,id2,id3` — pairings between selected oils |
+| `POST` | `/api/blends` | Create blend (validates no UNSAFE pairs server-side) |
+| `GET` | `/api/blends/[id]` | Blend detail with ingredients and pairings |
+| `GET` | `/api/cron/purge` | Delete inactive blends (requires `Authorization: Bearer <CRON_SECRET>`) |
+
+---
+
+## Building the Container
+
+```bash
+docker build -t oil-blender .
+```
+
+The build compiles seed and enrichment scripts to plain JS (via esbuild) so they can be run inside the container without any Node toolchain.
+
+---
+
+## Releasing
+
+Releases are managed via GitHub Actions (`.github/workflows/release.yml`).
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This automatically:
+1. Builds the Docker image
+2. Pushes `ghcr.io/tfindley/oil-blender:1.0.0` and `ghcr.io/tfindley/oil-blender:latest` to GHCR
+3. Creates a GitHub Release with Docker run instructions
+
+---
+
+## Contributing
+
+Issues and PRs welcome at [github.com/tfindley/oil-blender](https://github.com/tfindley/oil-blender/issues).
+
+If you find an error in the oil data, incorrect safety information, or a missing UNSAFE pair, please open an issue — safety corrections are the highest priority.
+
+---
+
+## Compatibility Rating System
+
+| Rating | Description | Behaviour |
+|--------|-------------|-----------|
+| **EXCELLENT** | Actively beneficial together | Highlighted in UI |
+| **GOOD** | Compatible, no concerns | No note shown |
+| **CAUTION** | Mild concern | Amber warning shown — user can proceed |
+| **AVOID** | Not recommended | Red warning — user must acknowledge before saving |
+| **UNSAFE** | Dangerous combination | Hard block — cannot be saved |
+
+Blend grade is derived from the worst pairing:
+- **A** — all GOOD or EXCELLENT
+- **B** — at least one CAUTION, no AVOID/UNSAFE
+- **C** — at least one AVOID (user must acknowledge)
+- **F** — any UNSAFE pair (blocked entirely)

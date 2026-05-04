@@ -4,6 +4,17 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.0.11] — 2026-05-04
+
+### Added
+- `scripts/enrich.js` bundled into Docker image (compiled from `scripts/enrich-oils.ts` via esbuild) so the enrichment pipeline can run inside the container: `docker compose exec -e ANTHROPIC_API_KEY=... app node scripts/enrich.js`
+- `docs/DEVELOPMENT.md` — dedicated local development guide covering setup, schema changes, enrichment pipeline, project structure, and release process
+
+### Changed
+- Default `NEXT_PUBLIC_SITE_NAME` changed from `Potions & Lotions` to `Oil Blender`
+- README rewritten as a deployment/operations guide (Docker quickstart, env vars, admin, auto-purge, enrichment); development content moved to `docs/DEVELOPMENT.md`
+- All references to "Potions & Lotions" updated to "Oil Blender" throughout README, About page, and env defaults
+
 ## [0.0.10] — 2026-05-04
 
 ### Added
@@ -109,7 +120,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.10...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.11...HEAD
+[0.0.11]: https://github.com/tfindley/oil-blender/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/tfindley/oil-blender/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/tfindley/oil-blender/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/tfindley/oil-blender/compare/v0.0.7...v0.0.8

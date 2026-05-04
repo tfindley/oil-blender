@@ -10,7 +10,7 @@ import {
 } from '@react-pdf/renderer'
 import type { BlendDetail } from '@/types'
 
-const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'Potions & Lotions'
+const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'Oil Blender'
 
 const styles = StyleSheet.create({
   page: {

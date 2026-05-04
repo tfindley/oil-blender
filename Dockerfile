@@ -23,10 +23,17 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 RUN npm run build
 
-# Compile seed script to plain JS so it can run inside the container without tsx
+# Compile seed and enrich scripts to plain JS so they can run inside the container without tsx
 RUN ./node_modules/.bin/esbuild scripts/seed.ts \
     --bundle --platform=node --format=cjs \
     --outfile=scripts/seed.js \
+    --external:@prisma/client \
+    --external:@prisma/adapter-pg \
+    --external:pg
+
+RUN ./node_modules/.bin/esbuild scripts/enrich-oils.ts \
+    --bundle --platform=node --format=cjs \
+    --outfile=scripts/enrich.js \
     --external:@prisma/client \
     --external:@prisma/adapter-pg \
     --external:pg
@@ -60,9 +67,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pg ./node_modules/pg
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pg-pool ./node_modules/pg-pool
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/adapter-pg ./node_modules/@prisma/adapter-pg
 
-# Lightweight migration runner and seed script
+# Lightweight migration runner, seed, and enrichment scripts
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.js ./scripts/migrate.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed.js ./scripts/seed.js
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/enrich.js ./scripts/enrich.js
 
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
