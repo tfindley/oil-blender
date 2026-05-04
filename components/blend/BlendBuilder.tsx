@@ -14,10 +14,10 @@ import { QuantityTable } from './QuantityTable'
 
 const VOLUME_PRESETS = [10, 30, 50, 100, 200]
 const DILUTION_PRESETS = [
-  { label: '1% — sensitive', value: 0.01 },
-  { label: '2% — daily', value: 0.02 },
-  { label: '3% — therapeutic', value: 0.03 },
-  { label: '5% — targeted', value: 0.05 },
+  { label: '1%', sublabel: 'sensitive', value: 0.01 },
+  { label: '2%', sublabel: 'daily', value: 0.02 },
+  { label: '3%', sublabel: 'therapeutic', value: 0.03 },
+  { label: '5%', sublabel: 'targeted', value: 0.05 },
 ]
 
 interface SelectedEO {
@@ -135,7 +135,7 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
     (e) =>
       !eoSearch ||
       e.name.toLowerCase().includes(eoSearch.toLowerCase()) ||
-      e.botanicalName.toLowerCase().includes(eoSearch.toLowerCase())
+      (e.botanicalName ?? '').toLowerCase().includes(eoSearch.toLowerCase())
   )
 
   const canSave =
@@ -182,7 +182,8 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      {/* Left column: inputs */}
+
+      {/* ── Left column: oil pickers ── */}
       <div className="space-y-6 lg:col-span-2">
 
         {/* Step 1: Carrier */}
@@ -196,7 +197,7 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
               {carriers.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => { setCarrier(c); setAvoidAcknowledged(false) }}
+                  onClick={() => { setCarrier(carrier?.id === c.id ? null : c); setAvoidAcknowledged(false) }}
                   title={c.description}
                   className={`rounded-lg border p-3 text-left text-sm transition-all ${
                     carrier?.id === c.id
@@ -212,13 +213,15 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
           </CardBody>
         </Card>
 
-        {/* Step 2: Essential Oils */}
+        {/* Step 2: Essential Oil picker */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">2. Add Essential Oils</h2>
-                <p className="text-sm text-stone-500 dark:text-stone-400">Select up to 5 essential oils for your blend.</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">
+                  {selectedEOs.length < 5 ? 'Select up to 5 essential oils.' : 'Maximum 5 oils reached.'}
+                </p>
               </div>
               {selectedEOs.length < 5 && (
                 <div className="flex rounded-md border border-stone-200 text-xs dark:border-stone-600">
@@ -247,37 +250,10 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
             </div>
           </CardHeader>
           <CardBody className="space-y-3">
-            {/* Selected EOs */}
-            {selectedEOs.length > 0 && (
-              <div className="space-y-2">
-                {selectedEOs.map((e) => (
-                  <div key={e.oil.id} className="flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-600 dark:bg-stone-700">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-stone-800 dark:text-stone-100">{e.oil.name}</span>
-                      <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{e.oil.botanicalName}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        min={0.1}
-                        max={5}
-                        step={0.1}
-                        value={e.percentagePct.toFixed(1)}
-                        onChange={(ev) => updatePct(e.oil.id, parseFloat(ev.target.value) || 0)}
-                        className="w-16 rounded border border-stone-300 bg-white px-2 py-1 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
-                      />
-                      <span className="text-sm text-stone-500 dark:text-stone-400">%</span>
-                    </div>
-                    <button
-                      onClick={() => removeEO(e.oil.id)}
-                      className="text-stone-400 hover:text-red-500 dark:text-stone-500 dark:hover:text-red-400"
-                      aria-label={`Remove ${e.oil.name}`}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {selectedEOs.length >= 5 && (
+              <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500 dark:bg-stone-700 dark:text-stone-400">
+                You have 5 essential oils — remove one from your blend to add another.
+              </p>
             )}
 
             {/* Search mode */}
@@ -358,7 +334,7 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
                           </div>
                           {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
                         </div>
-                        <p className="mt-1 text-xs text-stone-500 italic dark:text-stone-400">{eo.aroma}</p>
+                        <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{eo.aroma}</p>
                         <ul className="mt-1.5 space-y-0.5">
                           {eo.benefits.slice(0, 2).map((b, i) => (
                             <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
@@ -375,24 +351,90 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
             )}
           </CardBody>
         </Card>
+      </div>
 
-        {/* Step 3: Volume & Dilution */}
+      {/* ── Right column: live blend summary ── */}
+      <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+
+        {/* Blend composition */}
         <Card>
           <CardHeader>
-            <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">3. Volume &amp; Dilution</h2>
+            <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Your Blend</h2>
           </CardHeader>
-          <CardBody className="space-y-5">
+          <CardBody className="space-y-4">
+
+            {/* Carrier */}
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">Total volume</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Carrier Oil</p>
+              {carrier ? (
+                <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-950/40">
+                  <div>
+                    <span className="text-sm font-medium text-amber-900 dark:text-amber-200">{carrier.name}</span>
+                    <span className="ml-2 text-xs italic text-amber-600 dark:text-amber-500">{carrier.aroma}</span>
+                  </div>
+                  <button
+                    onClick={() => { setCarrier(null); setAvoidAcknowledged(false) }}
+                    className="ml-2 text-amber-400 hover:text-red-500 dark:text-amber-600 dark:hover:text-red-400"
+                    aria-label="Remove carrier"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm italic text-stone-400 dark:text-stone-500">None selected</p>
+              )}
+            </div>
+
+            {/* Essential oils */}
+            <div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                Essential Oils {selectedEOs.length > 0 && `(${selectedEOs.length}/5)`}
+              </p>
+              {selectedEOs.length === 0 ? (
+                <p className="text-sm italic text-stone-400 dark:text-stone-500">None selected</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {selectedEOs.map((e) => (
+                    <div key={e.oil.id} className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-600 dark:bg-stone-700">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-medium text-stone-800 dark:text-stone-100">{e.oil.name}</span>
+                        <span className="ml-1.5 text-[10px] italic text-stone-400 dark:text-stone-500">{e.oil.botanicalName}</span>
+                      </div>
+                      <input
+                        type="number"
+                        min={0.1}
+                        max={5}
+                        step={0.1}
+                        value={e.percentagePct.toFixed(1)}
+                        onChange={(ev) => updatePct(e.oil.id, parseFloat(ev.target.value) || 0)}
+                        className="w-14 rounded border border-stone-300 bg-white px-1.5 py-0.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
+                      />
+                      <span className="text-xs text-stone-400 dark:text-stone-500">%</span>
+                      <button
+                        onClick={() => removeEO(e.oil.id)}
+                        className="text-stone-300 hover:text-red-500 dark:text-stone-500 dark:hover:text-red-400"
+                        aria-label={`Remove ${e.oil.name}`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Volume */}
+            <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Volume</p>
+              <div className="flex flex-wrap gap-1.5">
                 {VOLUME_PRESETS.map((v) => (
                   <button
                     key={v}
                     onClick={() => { setTotalVolumeMl(v); setCustomVolume('') }}
-                    className={`rounded-md border px-3 py-1.5 text-sm transition-all ${
+                    className={`rounded border px-2.5 py-1 text-xs transition-all ${
                       totalVolumeMl === v && !customVolume
                         ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                        : 'border-stone-200 text-stone-600 hover:border-amber-300 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-500'
+                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
                     }`}
                   >
                     {v} ml
@@ -400,7 +442,7 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
                 ))}
                 <input
                   type="number"
-                  placeholder="Custom ml"
+                  placeholder="Custom"
                   value={customVolume}
                   min={5}
                   max={500}
@@ -409,55 +451,54 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
                     const v = parseInt(e.target.value)
                     if (v >= 5) setTotalVolumeMl(v)
                   }}
-                  className="w-24 rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
+                  className="w-20 rounded border border-stone-200 bg-white px-2 py-1 text-xs focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
                 />
               </div>
             </div>
 
+            {/* Dilution */}
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">Dilution rate</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Dilution</p>
+              <div className="flex flex-wrap gap-1.5">
                 {DILUTION_PRESETS.map((d) => (
                   <button
                     key={d.value}
                     onClick={() => setDilutionRate(d.value)}
-                    className={`rounded-md border px-3 py-1.5 text-sm transition-all ${
+                    className={`rounded border px-2.5 py-1 text-left text-xs transition-all ${
                       dilutionRate === d.value
                         ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                        : 'border-stone-200 text-stone-600 hover:border-amber-300 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-500'
+                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
                     }`}
                   >
-                    {d.label}
+                    <span className="font-medium">{d.label}</span>
+                    <span className="ml-1 text-stone-400 dark:text-stone-500">{d.sublabel}</span>
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-stone-400 dark:text-stone-500">
-                {(dilutionRate * 100).toFixed(0)}% dilution → {calc.essentialOilTotalMl.toFixed(2)} ml essential oils in {calc.carrierVolumeMl.toFixed(2)} ml carrier
-              </p>
+              {carrier && (
+                <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
+                  {calc.essentialOilTotalMl.toFixed(2)} ml EOs · {calc.carrierVolumeMl.toFixed(2)} ml carrier
+                </p>
+              )}
             </div>
+
+            {/* Quantities */}
+            {calc.ingredients.length > 0 && (
+              <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Quantities</p>
+                <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
+              </div>
+            )}
+
+            {/* Warnings */}
+            {calc.warnings.map((w, i) => (
+              <Alert key={i} variant="caution">{w}</Alert>
+            ))}
           </CardBody>
         </Card>
 
-        {/* Quantity table */}
-        {calc.ingredients.length > 0 && (
-          <Card>
-            <CardHeader>
-              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Quantities</h2>
-            </CardHeader>
-            <CardBody className="p-0">
-              <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
-            </CardBody>
-          </Card>
-        )}
-
-        {calc.warnings.map((w, i) => (
-          <Alert key={i} variant="caution">{w}</Alert>
-        ))}
-      </div>
-
-      {/* Right column: compatibility + save */}
-      <div className="space-y-6">
-        <Card className="sticky top-20">
+        {/* Compatibility + save */}
+        <Card>
           <CardHeader>
             <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Compatibility</h2>
           </CardHeader>

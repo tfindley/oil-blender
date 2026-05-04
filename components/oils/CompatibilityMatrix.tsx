@@ -31,12 +31,12 @@ interface Props {
   pairingMap: Record<string, PairingData>
 }
 
-const RATINGS: { key: Rating; label: string; cell: string; text: string }[] = [
-  { key: 'EXCELLENT', label: 'Excellent',  cell: 'bg-emerald-500 dark:bg-emerald-600', text: 'text-emerald-700 dark:text-emerald-400' },
-  { key: 'GOOD',      label: 'Good',       cell: 'bg-sky-400 dark:bg-sky-600',         text: 'text-sky-700 dark:text-sky-400' },
-  { key: 'CAUTION',   label: 'Caution',    cell: 'bg-amber-400 dark:bg-amber-500',     text: 'text-amber-700 dark:text-amber-400' },
-  { key: 'AVOID',     label: 'Avoid',      cell: 'bg-orange-500 dark:bg-orange-600',   text: 'text-orange-700 dark:text-orange-400' },
-  { key: 'UNSAFE',    label: 'Unsafe',     cell: 'bg-red-600 dark:bg-red-700',         text: 'text-red-700 dark:text-red-400' },
+const RATINGS: { key: Rating; label: string; dot: string; text: string }[] = [
+  { key: 'EXCELLENT', label: 'Excellent', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
+  { key: 'GOOD',      label: 'Good',      dot: 'bg-sky-400',     text: 'text-sky-700 dark:text-sky-400' },
+  { key: 'CAUTION',   label: 'Caution',   dot: 'bg-amber-400',   text: 'text-amber-700 dark:text-amber-400' },
+  { key: 'AVOID',     label: 'Avoid',     dot: 'bg-orange-500',  text: 'text-orange-700 dark:text-orange-400' },
+  { key: 'UNSAFE',    label: 'Unsafe',    dot: 'bg-red-500',     text: 'text-red-700 dark:text-red-400' },
 ]
 
 const RATING_MAP = Object.fromEntries(RATINGS.map((r) => [r.key, r])) as Record<Rating, (typeof RATINGS)[0]>
@@ -96,17 +96,13 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
         <div className="flex flex-wrap items-center gap-3">
           {RATINGS.map((r) => (
             <span key={r.key} className="flex items-center gap-1.5">
-              <span className={`inline-block h-3.5 w-3.5 rounded-sm ${r.cell}`} />
+              <span className={`inline-block h-3 w-3 rounded-full ${r.dot}`} />
               <span className="text-xs text-stone-600 dark:text-stone-400">{r.label}</span>
             </span>
           ))}
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3.5 w-3.5 rounded-sm bg-stone-200 dark:bg-stone-600" />
+            <span className="inline-block h-3 w-3 rounded-full bg-stone-300 dark:bg-stone-500" />
             <span className="text-xs text-stone-600 dark:text-stone-400">No data</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3.5 w-3.5 rounded-sm bg-stone-100 dark:bg-stone-800" />
-            <span className="text-xs text-stone-600 dark:text-stone-400">Same oil</span>
           </span>
         </div>
       </div>
@@ -164,7 +160,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
                     return (
                       <td
                         key={col.id}
-                        className="border-stone-100 bg-stone-100 dark:border-stone-800 dark:bg-stone-800"
+                        className="bg-stone-100 dark:bg-stone-800"
                         style={{ width: 30, height: 30 }}
                       />
                     )
@@ -176,14 +172,19 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
                   return (
                     <td
                       key={col.id}
-                      className={`cursor-pointer transition-opacity hover:opacity-70 ${
-                        ratingInfo
-                          ? ratingInfo.cell
-                          : 'bg-stone-200 dark:bg-stone-600'
-                      }`}
+                      className="cursor-pointer bg-white transition-colors hover:bg-stone-50 dark:bg-stone-900 dark:hover:bg-stone-800"
                       style={{ width: 30, height: 30 }}
                       onMouseEnter={(e) => handleMouseEnter(e, row, col)}
-                    />
+                    >
+                      <div className="flex h-full items-center justify-center">
+                        <span
+                          className={`inline-block rounded-full transition-transform hover:scale-110 ${
+                            ratingInfo ? ratingInfo.dot : 'bg-stone-200 dark:bg-stone-600'
+                          }`}
+                          style={{ width: 12, height: 12 }}
+                        />
+                      </div>
+                    </td>
                   )
                 })}
               </tr>

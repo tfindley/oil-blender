@@ -5,8 +5,8 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
-  Font,
 } from '@react-pdf/renderer'
 import type { BlendDetail } from '@/types'
 
@@ -163,9 +163,10 @@ const GRADE_TEXT_COLORS: Record<string, string> = {
 interface BlendReportProps {
   blend: BlendDetail
   baseUrl: string
+  qrDataUrl?: string
 }
 
-export function BlendReport({ blend, baseUrl }: BlendReportProps) {
+export function BlendReport({ blend, baseUrl, qrDataUrl }: BlendReportProps) {
   const shareUrl = `${baseUrl}/blend/${blend.id}`
   const date = new Date(blend.createdAt).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -268,9 +269,12 @@ export function BlendReport({ blend, baseUrl }: BlendReportProps) {
           </View>
         )}
 
-        {/* Share URL */}
+        {/* QR code + share URL */}
         <View style={styles.qrSection}>
-          <Text style={styles.qrUrl}>Blend URL: {shareUrl}</Text>
+          {qrDataUrl && (
+            <Image src={qrDataUrl} style={{ width: 80, height: 80 }} />
+          )}
+          <Text style={styles.qrUrl}>Scan to open blend · {shareUrl}</Text>
         </View>
 
         {/* Footer */}

@@ -14,6 +14,7 @@ export default async function BlendPage() {
     select: {
       id: true,
       name: true,
+      botanicalName: true,
       type: true,
       aroma: true,
       benefits: true,

@@ -15,13 +15,18 @@ export function BlendPdfDownload({ blend, baseUrl }: BlendPdfDownloadProps) {
   async function handleDownload() {
     setLoading(true)
     try {
+      const shareUrl = `${baseUrl}/blend/${blend.id}`
+
       // Lazy runtime imports — @react-pdf/renderer never resolved by the bundler at compile time
-      const [{ pdf }, { BlendReport }] = await Promise.all([
+      const [{ pdf }, { BlendReport }, QRCode] = await Promise.all([
         import('@react-pdf/renderer'),
         import('@/components/pdf/BlendReport'),
+        import('qrcode'),
       ])
 
-      const doc = createElement(BlendReport, { blend, baseUrl })
+      const qrDataUrl = await QRCode.default.toDataURL(shareUrl, { width: 120, margin: 1 })
+
+      const doc = createElement(BlendReport, { blend, baseUrl, qrDataUrl })
       const blob = await pdf(doc as any).toBlob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
