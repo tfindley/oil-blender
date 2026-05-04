@@ -4,6 +4,12 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.0.8] — 2026-05-04
+
+### Changed
+- Repository renamed from `oils` to `oil-blender` (`github.com/tfindley/oil-blender`)
+- All internal references, Docker image paths, documentation, and About page links updated to match
+
 ## [0.0.7] — 2026-05-04
 
 ### Added
@@ -81,7 +87,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.8...HEAD
+[0.0.8]: https://github.com/tfindley/oil-blender/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/tfindley/oil-blender/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/tfindley/oil-blender/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/tfindley/oil-blender/compare/v0.0.4...v0.0.5
