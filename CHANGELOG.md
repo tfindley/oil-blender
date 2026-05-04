@@ -4,7 +4,7 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
-## [0.0.6] — 2026-05-04
+## [0.0.7] — 2026-05-04
 
 ### Added
 - **Google Analytics 4** — optional analytics via `NEXT_PUBLIC_GA_MEASUREMENT_ID` env var; omit to disable entirely; no tracking code injected when unset
