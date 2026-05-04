@@ -1,0 +1,2 @@
+ALTER TABLE "Oil" ADD COLUMN "imageUrl" TEXT;
+ALTER TABLE "Oil" ADD COLUMN "imageAlt" TEXT;

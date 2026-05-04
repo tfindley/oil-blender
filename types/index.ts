@@ -5,6 +5,7 @@ export type BlendGrade = 'A' | 'B' | 'C' | 'F'
 export interface OilSummary {
   id: string
   name: string
+  botanicalName: string
   type: OilType
   aroma: string
   benefits: string[]
@@ -12,10 +13,12 @@ export interface OilSummary {
   consistency?: string | null
   absorbency?: string | null
   dilutionRateMax?: number | null
+  imageUrl?: string | null
+  imageAlt?: string | null
+  buyUrl?: string | null
 }
 
 export interface OilDetail extends OilSummary {
-  botanicalName: string
   origin: string
   history: string
   contraindications: string[]
@@ -52,6 +55,13 @@ export interface BlendDetail {
   notes?: string | null
   grade: BlendGrade
   createdAt: string
+  viewCount: number
+  lastAccessedAt?: string | null
+  authorName?: string | null
+  about?: string | null
+  isFeatured: boolean
+  isPinned: boolean
+  isHidden: boolean
   ingredients: BlendIngredientSummary[]
   pairings: Array<{
     oilAId: string

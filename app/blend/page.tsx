@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { BlendBuilder } from '@/components/blend/BlendBuilder'
 import type { OilSummary } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Build a Blend — Potions & Lotions',
   description: 'Create a custom massage oil blend with compatibility scoring and a printable recipe card.',
@@ -12,6 +14,7 @@ export default async function BlendPage() {
     select: {
       id: true,
       name: true,
+      botanicalName: true,
       type: true,
       aroma: true,
       benefits: true,
@@ -23,8 +26,8 @@ export default async function BlendPage() {
     orderBy: { name: 'asc' },
   })
 
-  const carriers = oils.filter((o) => o.type === 'CARRIER') as OilSummary[]
-  const essentials = oils.filter((o) => o.type === 'ESSENTIAL') as OilSummary[]
+  const carriers = oils.filter((o: typeof oils[number]) => o.type === 'CARRIER') as OilSummary[]
+  const essentials = oils.filter((o: typeof oils[number]) => o.type === 'ESSENTIAL') as OilSummary[]
 
   if (oils.length === 0) {
     return (

@@ -37,7 +37,7 @@ RUN adduser --system --uid 1001 nextjs
 # Copy public assets
 COPY --from=builder /app/public ./public
 
-# Copy Prisma schema and migrations (for migrate deploy at startup)
+# Prisma schema and migrations (read by scripts/migrate.js at startup)
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./package.json
 
@@ -45,12 +45,18 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma client binaries
+# Prisma client binaries (runtime query engine)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pg ./node_modules/pg
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pg-pool ./node_modules/pg-pool
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/adapter-pg ./node_modules/@prisma/adapter-pg
+
+# Lightweight migration runner (uses only pg — no prisma CLI needed)
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.js ./scripts/migrate.js
+
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 USER nextjs
 
@@ -58,4 +64,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["./docker-entrypoint.sh"]

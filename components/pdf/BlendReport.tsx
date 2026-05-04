@@ -5,8 +5,8 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
-  Font,
 } from '@react-pdf/renderer'
 import type { BlendDetail } from '@/types'
 
@@ -39,6 +39,36 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 9,
     color: '#78716c',
+  },
+  authorLine: {
+    fontSize: 9,
+    color: '#78716c',
+    marginTop: 2,
+  },
+  aboutText: {
+    fontSize: 10,
+    color: '#44403c',
+    marginTop: 8,
+    lineHeight: 1.5,
+  },
+  notesBox: {
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: '#fef3c7',
+    borderRadius: 4,
+  },
+  notesLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#92400e',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  notesText: {
+    fontSize: 9,
+    color: '#78350f',
+    lineHeight: 1.5,
   },
   gradeBadge: {
     display: 'flex',
@@ -163,9 +193,10 @@ const GRADE_TEXT_COLORS: Record<string, string> = {
 interface BlendReportProps {
   blend: BlendDetail
   baseUrl: string
+  qrDataUrl?: string
 }
 
-export function BlendReport({ blend, baseUrl }: BlendReportProps) {
+export function BlendReport({ blend, baseUrl, qrDataUrl }: BlendReportProps) {
   const shareUrl = `${baseUrl}/blend/${blend.id}`
   const date = new Date(blend.createdAt).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -185,6 +216,12 @@ export function BlendReport({ blend, baseUrl }: BlendReportProps) {
           <Text style={styles.subtitle}>
             Created {date} · {blend.totalVolumeMl}ml · {(blend.dilutionRate * 100).toFixed(0)}% dilution
           </Text>
+          {blend.authorName && (
+            <Text style={styles.authorLine}>by {blend.authorName}</Text>
+          )}
+          {blend.about && (
+            <Text style={styles.aboutText}>{blend.about}</Text>
+          )}
           <View style={styles.gradeBadge}>
             <View
               style={[
@@ -268,9 +305,20 @@ export function BlendReport({ blend, baseUrl }: BlendReportProps) {
           </View>
         )}
 
-        {/* Share URL */}
+        {/* User notes */}
+        {blend.notes && (
+          <View style={styles.notesBox}>
+            <Text style={styles.notesLabel}>Notes</Text>
+            <Text style={styles.notesText}>{blend.notes}</Text>
+          </View>
+        )}
+
+        {/* QR code + share URL */}
         <View style={styles.qrSection}>
-          <Text style={styles.qrUrl}>Blend URL: {shareUrl}</Text>
+          {qrDataUrl && (
+            <Image src={qrDataUrl} style={{ width: 80, height: 80 }} />
+          )}
+          <Text style={styles.qrUrl}>Scan to open blend · {shareUrl}</Text>
         </View>
 
         {/* Footer */}

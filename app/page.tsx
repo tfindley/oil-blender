@@ -1,19 +1,43 @@
 import Link from 'next/link'
+import { prisma } from '@/lib/prisma'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
+import { BlendCard } from '@/components/blends/BlendCard'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+export default async function Home() {
+  const featuredBlends = await prisma.blend.findMany({
+    where: { isHidden: false, OR: [{ isFeatured: true }, { isPinned: true }] },
+    select: {
+      id: true,
+      name: true,
+      grade: true,
+      authorName: true,
+      about: true,
+      viewCount: true,
+      isPinned: true,
+      ingredients: {
+        where: { oil: { type: 'ESSENTIAL' } },
+        include: { oil: { select: { name: true } } },
+        take: 3,
+      },
+    },
+    orderBy: [{ isPinned: 'desc' }, { viewCount: 'desc' }],
+    take: 6,
+  })
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-stone-50 to-stone-100 px-4 py-20 text-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-stone-50 to-stone-100 px-4 py-20 text-center dark:from-stone-900 dark:via-stone-900 dark:to-stone-800">
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 text-5xl">🌿</div>
-          <h1 className="mb-4 font-serif text-4xl font-bold text-stone-900 sm:text-5xl">
+          <h1 className="mb-4 font-serif text-4xl font-bold text-stone-900 sm:text-5xl dark:text-stone-100">
             Craft Your Perfect <br className="hidden sm:block" />
             Massage Oil Blend
           </h1>
-          <p className="mx-auto mb-8 max-w-xl text-lg text-stone-600">
+          <p className="mx-auto mb-8 max-w-xl text-lg text-stone-600 dark:text-stone-300">
             Combine carrier and essential oils with real-time compatibility scoring, safety guidance, and a downloadable recipe card — all in one place.
           </p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -31,10 +55,49 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Featured blends */}
+      {featuredBlends.length > 0 && (
+        <section className="px-4 py-16 bg-stone-50 dark:bg-stone-900/50">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8 flex items-end justify-between">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">
+                  Featured Blends
+                </h2>
+                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                  Curated recipes from our community — ready to make.
+                </p>
+              </div>
+              <Link
+                href="/blends"
+                className="shrink-0 text-sm font-medium text-amber-700 hover:underline dark:text-amber-500"
+              >
+                Explore all blends →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredBlends.map((b) => (
+                <BlendCard
+                  key={b.id}
+                  id={b.id}
+                  name={b.name}
+                  grade={b.grade}
+                  authorName={b.authorName}
+                  about={b.about}
+                  viewCount={b.viewCount}
+                  isPinned={b.isPinned}
+                  topOils={b.ingredients.map((i) => i.oil.name)}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Features */}
       <section className="px-4 py-16">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-10 text-center font-serif text-2xl font-semibold text-stone-800">
+          <h2 className="mb-10 text-center font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">
             Everything you need to blend with confidence
           </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +115,7 @@ export default function Home() {
               {
                 icon: '📄',
                 title: 'Printable Recipe Card',
-                body: 'Save your blend and download a PDF recipe card with ingredients, benefits, pairing notes, and a shareable URL.',
+                body: 'Save your blend and download a PDF recipe card with ingredients, benefits, pairing notes, and a QR code linking back to your blend.',
               },
               {
                 icon: '🔗',
@@ -61,8 +124,8 @@ export default function Home() {
               },
               {
                 icon: '🌿',
-                title: '45 Oils in the Library',
-                body: '30 essential oils and 15 carrier oils — each with origins, benefits, contraindications, and curated pairing data.',
+                title: '55 Oils in the Library',
+                body: '30 essential oils and 25 carrier oils — each with origins, benefits, contraindications, and curated pairing data.',
               },
               {
                 icon: '🛡️',
@@ -73,8 +136,8 @@ export default function Home() {
               <Card key={f.title}>
                 <CardBody>
                   <div className="mb-3 text-3xl">{f.icon}</div>
-                  <h3 className="mb-2 font-serif font-semibold text-stone-800">{f.title}</h3>
-                  <p className="text-sm text-stone-600">{f.body}</p>
+                  <h3 className="mb-2 font-serif font-semibold text-stone-800 dark:text-stone-200">{f.title}</h3>
+                  <p className="text-sm text-stone-600 dark:text-stone-400">{f.body}</p>
                 </CardBody>
               </Card>
             ))}
