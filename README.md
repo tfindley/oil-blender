@@ -91,7 +91,10 @@ The **UNSAFE pairing list** (`scripts/unsafe-pairs.ts`) is hand-curated by the d
 git clone https://github.com/tfindley/oil-blender.git
 cd oil-blender
 npm install
+npx prisma generate
 ```
+
+> `npx prisma generate` must be run once after install (and again after any schema change) to create the Prisma client. The error `Cannot find module '.prisma/client/default'` means this step was skipped.
 
 ### 2. Configure Environment
 
@@ -287,8 +290,10 @@ After starting, run migrations and seed:
 
 ```bash
 docker compose exec app node scripts/migrate.js
-docker compose exec app npx tsx scripts/seed.ts
+docker compose exec app node scripts/seed.js
 ```
+
+> `scripts/seed.js` is compiled from `scripts/seed.ts` during the Docker build — no tsx or Node toolchain needed on the host.
 
 ### Pre-built Images
 

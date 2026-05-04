@@ -23,6 +23,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 RUN npm run build
 
+# Compile seed script to plain JS so it can run inside the container without tsx
+RUN ./node_modules/.bin/esbuild scripts/seed.ts \
+    --bundle --platform=node --format=cjs \
+    --outfile=scripts/seed.js \
+    --external:@prisma/client \
+    --external:@prisma/adapter-pg \
+    --external:pg
+
 # ── Stage 3: Production runner ────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 RUN apk add --no-cache libc6-compat && apk upgrade --no-cache
@@ -52,8 +60,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pg ./node_modules/pg
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pg-pool ./node_modules/pg-pool
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/adapter-pg ./node_modules/@prisma/adapter-pg
 
-# Lightweight migration runner (uses only pg — no prisma CLI needed)
+# Lightweight migration runner and seed script
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.js ./scripts/migrate.js
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed.js ./scripts/seed.js
 
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh

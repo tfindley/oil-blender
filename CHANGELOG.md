@@ -4,6 +4,15 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.0.10] — 2026-05-04
+
+### Added
+- Seed script compiled to `scripts/seed.js` during Docker build so the database can be seeded from inside the container without cloning the repo or installing tsx: `docker compose exec app node scripts/seed.js`
+
+### Fixed
+- README Getting Started: added missing `npx prisma generate` step after `npm install` (omitting it causes `Cannot find module '.prisma/client/default'` when running seed or enrich)
+- README Docker section: corrected container seed command from `npx tsx scripts/seed.ts` (tsx not available in runner) to `node scripts/seed.js`
+
 ## [0.0.9] — 2026-05-04
 
 ### Added
@@ -100,7 +109,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.9...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.10...HEAD
+[0.0.10]: https://github.com/tfindley/oil-blender/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/tfindley/oil-blender/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/tfindley/oil-blender/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/tfindley/oil-blender/compare/v0.0.6...v0.0.7
