@@ -4,6 +4,30 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.0.6] — 2026-05-04
+
+### Added
+- **Google Analytics 4** — optional analytics via `NEXT_PUBLIC_GA_MEASUREMENT_ID` env var; omit to disable entirely; no tracking code injected when unset
+- **View tracking** — every blend page visit increments `viewCount` and updates `lastAccessedAt` (fire-and-forget, does not slow page load)
+- **Auto-purge endpoint** — `GET /api/cron/purge` (authenticated with `CRON_SECRET`) deletes non-featured blends inactive for 30+ days; host-side cron setup documented in README
+- **Admin blend management** — `/admin/blends` lists all blends with view count, grade, last accessed date, and feature flags; supports single, multi-select, and all-non-featured bulk delete
+- **Admin blend edit** — `/admin/blends/[id]` allows editing author name, about text, and isFeatured / isPinned / isHidden flags; shows read-only ingredient list and stats
+- **Admin blend promote flow** — `/admin/blends/import` accepts a blend URL or bare ID, shows a preview, and saves author metadata and feature flags to promote a user-built blend to the curated showcase
+- **Featured blends on homepage** — pinned and featured blends shown in a `BlendCard` grid between the hero and the feature grid; section hidden when no featured blends exist
+- **Public `/blends` listing page** — shows all non-hidden featured and popular (≥ 5 views) blends, sorted pinned → featured → viewCount
+- **`BlendCard` component** — public-facing card with grade badge, author byline, about excerpt, top 3 essential oils, view count, and pin indicator
+- **"Blends" nav link** added to the header (between Build a Blend and Oil Library)
+- **Privacy & analytics disclosures** on the About page — explains what blend data is stored, the 30-day auto-purge policy, and how Google Analytics is used with opt-out instructions
+- **10 additional carrier oils** — Walnut, St John's Wort, Wheat Germ, Comfrey, Neem, Macadamia, Calendula, Borage Seed, Arnica, Olive; 37 new pairings seeded (library now 55 oils, 96+ pairings)
+- **`.env.example`** — documents all required and optional environment variables
+- **PDF QR code** — blend share URL embedded as a QR code image in the downloadable recipe card
+
+### Changed
+- Blend schema extended with 7 new fields: `viewCount`, `lastAccessedAt`, `authorName`, `about`, `isFeatured`, `isPinned`, `isHidden`
+- `BlendDetail` TypeScript type updated with the 7 new fields
+- Homepage is now a dynamic server component fetching featured blends from the database
+- Feature grid on homepage updated: oil count corrected to 55, PDF description updated to mention QR code
+
 ## [0.0.5] — 2026-05-04
 
 ### Added
@@ -57,7 +81,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oils` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oils/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/tfindley/oils/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/tfindley/oils/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/tfindley/oils/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/tfindley/oils/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/tfindley/oils/compare/v0.0.2...v0.0.3

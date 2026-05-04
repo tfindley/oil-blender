@@ -49,14 +49,15 @@ export default function AboutPage() {
             'A–F compatibility grade for every blend',
             'EXCELLENT / GOOD / CAUTION / AVOID / UNSAFE pairing system',
             'Hard blocks for genuinely dangerous combinations',
-            '30 essential oils + 15 carrier oils in the library',
+            '30 essential oils + 25 carrier oils in the library',
             'Accurate quantity calculator (ml + drops)',
             'Dilution rate guidance (1–5%)',
             'Batch volume presets (10–200ml)',
             'Persistent shareable blend URLs',
-            'PDF recipe card download',
+            'PDF recipe card with QR code download',
             'Per-oil profiles: benefits, origins, contraindications',
             'Searchable, filterable oil catalog',
+            'Curated featured blends from the community',
           ].map((f) => (
             <li key={f} className="flex items-start gap-2 text-sm text-stone-700 dark:text-stone-300">
               <span className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-500">✓</span>
@@ -96,6 +97,66 @@ export default function AboutPage() {
         </CardBody>
       </Card>
 
+      {/* Data Storage */}
+      <section className="mb-10">
+        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Your Data &amp; Privacy</h2>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
+            <h3 className="mb-2 font-semibold text-stone-800 dark:text-stone-200">What gets stored</h3>
+            <div className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
+              <p>
+                When you save a blend, the following data is written to the database: the oils you selected,
+                their quantities and percentages, the blend name, creation timestamp, and view count. <strong>No
+                account, login, or personal information is required</strong> — the only thing linking you to a blend
+                is the URL.
+              </p>
+              <p>
+                Blend data is <strong>automatically deleted after 30 days of inactivity</strong> (last time the blend
+                URL was visited). Blends that have been promoted to the curated showcase by an admin are kept
+                indefinitely.
+              </p>
+              <p>
+                There is no user tracking, no cookies set by this application, and no personal data collected
+                by the blend builder itself.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
+            <h3 className="mb-2 font-semibold text-stone-800 dark:text-stone-200">Analytics</h3>
+            <div className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
+              <p>
+                This site may use <strong>Google Analytics 4</strong> to collect anonymised usage statistics —
+                pages visited, session duration, browser and device type, and approximate location (country or
+                region). This helps understand which features are useful and how the site is being used.
+              </p>
+              <p>
+                <strong>Blend contents and recipe data are never sent to Google.</strong> Analytics data is
+                aggregated and anonymised. No personally identifiable information is transmitted.
+              </p>
+              <p>
+                If you prefer not to be tracked, you can install the{' '}
+                <a
+                  href="https://tools.google.com/dlpage/gaoptout"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-amber-700 hover:underline dark:text-amber-500"
+                >
+                  Google Analytics Opt-out Browser Add-on
+                </a>
+                , use a content-blocking browser extension (uBlock Origin, Privacy Badger, etc.), or enable
+                &ldquo;Do Not Track&rdquo; in your browser settings.
+              </p>
+              <p className="text-xs text-stone-400 dark:text-stone-500">
+                Analytics may not be enabled on all deployments of this open-source project. Self-hosted
+                instances can omit the <code className="font-mono">NEXT_PUBLIC_GA_MEASUREMENT_ID</code> environment
+                variable to disable it entirely.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Tech Stack */}
       <section className="mb-10">
         <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Tech Stack</h2>
@@ -108,6 +169,7 @@ export default function AboutPage() {
             { name: '@react-pdf/renderer', role: 'Client-side PDF generation', url: 'https://react-pdf.org' },
             { name: 'Zod', role: 'API validation', url: 'https://zod.dev' },
             { name: 'Anthropic Claude', role: 'Data enrichment (AI)', url: 'https://anthropic.com' },
+            { name: 'Google Analytics 4', role: 'Anonymised usage analytics (optional)', url: 'https://marketingplatform.google.com/about/analytics/' },
             { name: 'GitHub Actions', role: 'CI/CD + container registry', url: 'https://github.com/features/actions' },
           ].map((t) => (
             <a
