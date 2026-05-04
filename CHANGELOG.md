@@ -6,9 +6,13 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [0.0.9] — 2026-05-04
 
+### Added
+- **`NEXT_PUBLIC_SITE_NAME`** env var — sets the deployment display name shown in the header, footer, page titles, and PDF; defaults to `"Potions & Lotions"`; About page shows a "Powered by Potions & Lotions" attribution when a custom name is set
+
 ### Fixed
-- `ADMIN_SECRET` and `CRON_SECRET` were not forwarded to the app container in `docker-compose.yml`, causing the admin panel to be accessible without a password (proxy saw `undefined` secret and allowed all requests through)
-- Renamed `package.json` package name from `oils` to `oil-blender` to eliminate grype false positive (GHSA-v279-v2xm-whq9)
+- `ADMIN_SECRET` and `CRON_SECRET` were not forwarded to the app container in `docker-compose.yml`, causing the admin panel to be accessible without a password
+- `NEXT_PUBLIC_SITE_NAME` added to `docker-compose.yml` environment block
+- Renamed `package.json` package name from `oils` to `oil-blender` (eliminates grype false positive GHSA-v279-v2xm-whq9)
 - Dockerfile runner stage now runs `apk upgrade` to pick up patched BusyBox (CVE-2025-60876)
 - Renamed `middleware.ts` → `proxy.ts` and exported function `middleware` → `proxy` (Next.js 16 deprecation)
 - Added `data-scroll-behavior="smooth"` to `<html>` element (Next.js 16 scroll behaviour change)
@@ -96,7 +100,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.8...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.9...HEAD
+[0.0.9]: https://github.com/tfindley/oil-blender/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/tfindley/oil-blender/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/tfindley/oil-blender/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/tfindley/oil-blender/compare/v0.0.5...v0.0.6
