@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { pairingKey } from '@/lib/pairing-utils'
 
 type Rating = 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE'
 type OilType = 'ESSENTIAL' | 'CARRIER'
@@ -67,10 +68,6 @@ const RATINGS: Record<Rating, { label: string; dot: string; text: string; bg: st
     bg: 'bg-red-50 dark:bg-red-950/30',
     border: 'border-red-200 dark:border-red-800',
   },
-}
-
-function pairingKey(a: string, b: string) {
-  return a < b ? `${a}:${b}` : `${b}:${a}`
 }
 
 // ── Searchable combobox ────────────────────────────────────────────────────
@@ -317,6 +314,14 @@ function CompatibilityResult({
   )
 }
 
+function OilSlotPlaceholder({ side }: { side: 'A' | 'B' }) {
+  return (
+    <div className="flex items-center justify-center rounded-xl border border-dashed border-stone-200 bg-stone-50 p-8 text-center dark:border-stone-700 dark:bg-stone-900/40">
+      <p className="text-sm text-stone-400 dark:text-stone-500">Select Oil {side} above</p>
+    </div>
+  )
+}
+
 // ── Main export ────────────────────────────────────────────────────────────
 
 export function OilCompare({ oils, pairingMap }: Props) {
@@ -378,23 +383,11 @@ export function OilCompare({ oils, pairingMap }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_220px_1fr]">
-          {oilA ? (
-            <OilProfileCard oil={oilA} side="A" />
-          ) : (
-            <div className="flex items-center justify-center rounded-xl border border-dashed border-stone-200 bg-stone-50 p-8 text-center dark:border-stone-700 dark:bg-stone-900/40">
-              <p className="text-sm text-stone-400 dark:text-stone-500">Select Oil A above</p>
-            </div>
-          )}
+          {oilA ? <OilProfileCard oil={oilA} side="A" /> : <OilSlotPlaceholder side="A" />}
 
           <CompatibilityResult pairing={pairing} oilA={oilA} oilB={oilB} />
 
-          {oilB ? (
-            <OilProfileCard oil={oilB} side="B" />
-          ) : (
-            <div className="flex items-center justify-center rounded-xl border border-dashed border-stone-200 bg-stone-50 p-8 text-center dark:border-stone-700 dark:bg-stone-900/40">
-              <p className="text-sm text-stone-400 dark:text-stone-500">Select Oil B above</p>
-            </div>
-          )}
+          {oilB ? <OilProfileCard oil={oilB} side="B" /> : <OilSlotPlaceholder side="B" />}
         </div>
       )}
     </div>

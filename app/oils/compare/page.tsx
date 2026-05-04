@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { OilCompare } from '@/components/oils/OilCompare'
+import { buildPairingMap } from '@/lib/pairing-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,11 +34,7 @@ export default async function ComparePage() {
     }),
   ])
 
-  const pairingMap: Record<string, { rating: string; reason: string }> = {}
-  for (const p of pairings) {
-    const key = p.oilAId < p.oilBId ? `${p.oilAId}:${p.oilBId}` : `${p.oilBId}:${p.oilAId}`
-    pairingMap[key] = { rating: p.rating, reason: p.reason }
-  }
+  const pairingMap = buildPairingMap(pairings)
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">

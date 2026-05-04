@@ -6,7 +6,7 @@ import type { OilSummary, PairingRating, BlendGrade } from '@/types'
 import { calculateBlend } from '@/lib/blend-calculator'
 import { scoreBlend } from '@/lib/blend-scorer'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import { Input, Textarea } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { CompatibilityPanel } from './CompatibilityPanel'
@@ -537,18 +537,13 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
                 onChange={(e) => setBlendName(e.target.value)}
               />
 
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-stone-700 dark:text-stone-300">
-                  Notes <span className="font-normal text-stone-400">(optional)</span>
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Intended use, application method, personal notes…"
-                  value={blendNotes}
-                  onChange={(e) => setBlendNotes(e.target.value)}
-                  className="rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
-                />
-              </div>
+              <Textarea
+                label="Notes (optional)"
+                rows={3}
+                placeholder="Intended use, application method, personal notes…"
+                value={blendNotes}
+                onChange={(e) => setBlendNotes(e.target.value)}
+              />
 
               {saveError && <Alert variant="unsafe">{saveError}</Alert>}
 

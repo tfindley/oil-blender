@@ -52,9 +52,7 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
     },
   })
 
-  const pairings = pairingsRaw
-    .filter((p) => oilIds.includes(p.oilAId) && oilIds.includes(p.oilBId))
-    .map((p) => ({
+  const pairings = pairingsRaw.map((p) => ({
       oilAId: p.oilAId,
       oilAName: p.oilA.name,
       oilBId: p.oilBId,
@@ -121,11 +119,8 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
           {blend.authorName && (
             <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">by {blend.authorName}</p>
           )}
-          {blend.about && (
-            <p className="mt-1 text-stone-600 dark:text-stone-400">{blend.about}</p>
-          )}
-          {!blend.about && blend.description && (
-            <p className="mt-1 text-stone-600 dark:text-stone-400">{blend.description}</p>
+          {(blend.about || blend.description) && (
+            <p className="mt-1 text-stone-600 dark:text-stone-400">{blend.about ?? blend.description}</p>
           )}
           <div className="mt-2 flex items-center gap-3 text-sm text-stone-500 dark:text-stone-400">
             <span>{blend.totalVolumeMl}ml</span>

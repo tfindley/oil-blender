@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import { pairingKey } from '@/lib/pairing-utils'
 
 type Rating = 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE'
 type OilType = 'ESSENTIAL' | 'CARRIER'
@@ -40,10 +41,6 @@ const RATINGS: { key: Rating; label: string; dot: string; text: string }[] = [
 ]
 
 const RATING_MAP = Object.fromEntries(RATINGS.map((r) => [r.key, r])) as Record<Rating, (typeof RATINGS)[0]>
-
-function pairingKey(a: string, b: string) {
-  return a < b ? `${a}:${b}` : `${b}:${a}`
-}
 
 type FilterMode = 'all' | 'ESSENTIAL' | 'CARRIER'
 
