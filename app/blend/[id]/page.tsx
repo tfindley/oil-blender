@@ -143,7 +143,7 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
           {/* Quantity table */}
           <Card>
             <CardHeader>
-              <h2 className="font-serif text-lg font-semibold text-stone-800">Ingredients</h2>
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Ingredients</h2>
             </CardHeader>
             <CardBody className="p-0">
               <QuantityTable ingredients={calcIngredients} totalVolumeMl={blend.totalVolumeMl} />
@@ -153,15 +153,15 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
           {/* Per-oil profiles */}
           <Card>
             <CardHeader>
-              <h2 className="font-serif text-lg font-semibold text-stone-800">Oil Profiles</h2>
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Oil Profiles</h2>
             </CardHeader>
             <CardBody className="space-y-4">
               {blendDetail.ingredients.map((i) => (
-                <div key={i.oilId} className="rounded-lg border border-stone-100 bg-stone-50 p-4">
+                <div key={i.oilId} className="rounded-lg border border-stone-100 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800">
                   <div className="mb-2 flex items-center justify-between">
                     <Link
                       href={`/oils/${i.oilId}`}
-                      className="font-serif font-semibold text-stone-800 hover:text-amber-700"
+                      className="font-serif font-semibold text-stone-800 hover:text-amber-700 dark:text-stone-200 dark:hover:text-amber-400"
                     >
                       {i.oilName}
                     </Link>
@@ -169,11 +169,11 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
                   </div>
                   <ul className="space-y-0.5">
                     {i.benefits.slice(0, 4).map((b, idx) => (
-                      <li key={idx} className="text-sm text-stone-600">• {b}</li>
+                      <li key={idx} className="text-sm text-stone-600 dark:text-stone-300">• {b}</li>
                     ))}
                   </ul>
                   {i.contraindications.length > 0 && (
-                    <p className="mt-2 text-xs text-amber-700">⚠ {i.contraindications[0]}</p>
+                    <p className="mt-2 text-xs text-amber-700 dark:text-amber-500">⚠ {i.contraindications[0]}</p>
                   )}
                 </div>
               ))}
@@ -185,7 +185,7 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
           {/* Compatibility */}
           <Card>
             <CardHeader>
-              <h2 className="font-serif text-lg font-semibold text-stone-800">Compatibility</h2>
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Compatibility</h2>
             </CardHeader>
             <CardBody>
               <CompatibilityPanel

@@ -225,18 +225,16 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
                     }`}
                     style={{ width: 160, minWidth: 160 }}
                   >
+                    <span className={`text-[11px] font-medium leading-tight ${isRowHighlighted ? 'text-amber-800 dark:text-amber-300' : 'text-stone-700 dark:text-stone-300'}`}>
+                      {row.name}
+                    </span>
                     <Link
                       href={`/oils/${row.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className={`block text-[11px] font-medium leading-tight hover:text-amber-700 dark:hover:text-amber-400 ${
-                        isRowHighlighted
-                          ? 'text-amber-800 dark:text-amber-300'
-                          : 'text-stone-700 dark:text-stone-300'
-                      }`}
-                    >
-                      {row.name}
-                    </Link>
-                    <span className="text-[9px] text-stone-400 dark:text-stone-500">
+                      className="ml-1 text-[9px] text-amber-600 opacity-60 hover:opacity-100 dark:text-amber-500"
+                      title={`View ${row.name} profile`}
+                    >↗</Link>
+                    <span className="block text-[9px] text-stone-400 dark:text-stone-500">
                       {row.type === 'ESSENTIAL' ? 'Essential' : 'Carrier'}
                     </span>
                   </td>

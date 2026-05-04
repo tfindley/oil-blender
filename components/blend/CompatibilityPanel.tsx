@@ -13,10 +13,10 @@ interface Pairing {
 }
 
 const GRADE_STYLES: Record<BlendGrade, string> = {
-  A: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  B: 'bg-amber-100 text-amber-800 border-amber-200',
-  C: 'bg-orange-100 text-orange-800 border-orange-200',
-  F: 'bg-red-100 text-red-800 border-red-200',
+  A: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+  B: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+  C: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800',
+  F: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800',
 }
 
 const GRADE_LABELS: Record<BlendGrade, string> = {
@@ -51,27 +51,27 @@ export function CompatibilityPanel({ grade, summary, pairings }: CompatibilityPa
       {notable.length > 0 && (
         <div className="space-y-2">
           {notable.map((p) => (
-            <div key={`${p.oilAId}-${p.oilBId}`} className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+            <div key={`${p.oilAId}-${p.oilBId}`} className="rounded-lg border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800">
               <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-stone-800">
+                <span className="text-sm font-medium text-stone-800 dark:text-stone-200">
                   {p.oilAName} + {p.oilBName}
                 </span>
                 <PairingBadge rating={p.rating} />
               </div>
-              <p className="text-xs text-stone-600">{p.reason}</p>
+              <p className="text-xs text-stone-600 dark:text-stone-400">{p.reason}</p>
             </div>
           ))}
         </div>
       )}
 
       {good.length > 0 && (
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-stone-500 dark:text-stone-400">
           + {good.length} compatible pairing{good.length !== 1 ? 's' : ''}
         </p>
       )}
 
       {pairings.length === 0 && (
-        <p className="text-sm text-stone-400 italic">Add a carrier and at least one essential oil to see compatibility.</p>
+        <p className="text-sm italic text-stone-400 dark:text-stone-500">Add a carrier and at least one essential oil to see compatibility.</p>
       )}
     </div>
   )

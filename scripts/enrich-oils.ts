@@ -5,82 +5,15 @@ import { Pool } from 'pg'
 import pLimit from 'p-limit'
 import { OIL_DEFINITIONS, ALL_OIL_NAMES } from './oil-definitions.js'
 import { UNSAFE_PAIRS } from './unsafe-pairs.js'
+import { sortPairingIds } from '../lib/pairing-utils.js'
+import { enrichOilProfile, type OilEnrichment } from '../lib/oil-enrichment.js'
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://oils:oils@localhost:5432/oils' })
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter } as any)
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const limit = pLimit(3)
-
-interface OilEnrichment {
-  botanicalName: string
-  origin: string
-  history: string
-  description: string
-  benefits: string[]
-  contraindications: string[]
-  aroma: string
-  consistency?: string
-  absorbency?: string
-  shelfLifeMonths?: number
-  dilutionRateMax?: number
-  pairings: Array<{
-    name: string
-    rating: 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID'
-    reason: string
-  }>
-}
-
-async function enrichOil(name: string, type: 'ESSENTIAL' | 'CARRIER'): Promise<OilEnrichment> {
-  const isCarrier = type === 'CARRIER'
-  const otherOilNames = ALL_OIL_NAMES.filter((n) => n !== name)
-
-  const prompt = `You are an expert aromatherapist and massage therapist. Provide accurate, professional information about ${name} ${isCarrier ? 'carrier oil' : 'essential oil'} for use in massage blending.
-
-Respond with a single JSON object (no markdown, no explanation) matching this exact shape:
-
-{
-  "botanicalName": "string — Latin botanical name",
-  "origin": "string — primary country/region of origin",
-  "history": "string — 2–3 sentences on historical use and cultural context",
-  "description": "string — 2–3 sentences on the oil's character, texture, and typical massage applications",
-  "benefits": ["array of 4–6 concise benefit strings"],
-  "contraindications": ["array of 2–4 contraindication strings, or empty array if none significant"],
-  "aroma": "string — brief aroma description (e.g. 'warm, spicy, woody')",
-  ${isCarrier ? `"consistency": "light|medium|heavy",
-  "absorbency": "fast|medium|slow",
-  "shelfLifeMonths": number,` : `"dilutionRateMax": number between 0.01 and 0.05 (e.g. 0.02 for 2%),`}
-  "pairings": [
-    // Rate EACH of the following oils when combined with ${name} in a massage blend.
-    // Rate ALL of: ${otherOilNames.slice(0, 20).join(', ')}
-    // Then also rate: ${otherOilNames.slice(20).join(', ')}
-    // Use exactly these ratings:
-    // EXCELLENT = actively beneficial together, enhances effects
-    // GOOD = compatible, no issues
-    // CAUTION = mild concern (e.g. competing scents, mild sensitisation risk) — user should be informed
-    // AVOID = not recommended (therapeutic conflict, sensitisation, or aroma clash) — user must acknowledge
-    // Do NOT use UNSAFE here — that is reserved for hand-curated safety overrides
-    {
-      "name": "exact oil name from the list above",
-      "rating": "EXCELLENT|GOOD|CAUTION|AVOID",
-      "reason": "1 sentence explanation shown to user"
-    }
-  ]
-}`
-
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
-  })
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error(`No JSON found in response for ${name}`)
-
-  return JSON.parse(jsonMatch[0]) as OilEnrichment
-}
+const limit = pLimit(8)
 
 async function upsertOil(name: string, type: 'ESSENTIAL' | 'CARRIER', enrichment: OilEnrichment) {
   await prisma.oil.upsert({
@@ -123,7 +56,7 @@ async function upsertPairing(
   rating: 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE',
   reason: string
 ) {
-  const [idA, idB] = [oilAId, oilBId].sort()
+  const [idA, idB] = sortPairingIds(oilAId, oilBId)
   await prisma.oilPairing.upsert({
     where: { oilAId_oilBId: { oilAId: idA, oilBId: idB } },
     create: { oilAId: idA, oilBId: idB, rating, reason },
@@ -141,7 +74,7 @@ async function main() {
       limit(async () => {
         console.log(`Enriching: ${name}`)
         try {
-          const enrichment = await enrichOil(name, type)
+          const enrichment = await enrichOilProfile(anthropic, name, type, ALL_OIL_NAMES)
           enrichments.set(name, enrichment)
           await upsertOil(name, type, enrichment)
         } catch (err) {

@@ -2,6 +2,10 @@ export function pairingKey(a: string, b: string): string {
   return a < b ? `${a}:${b}` : `${b}:${a}`
 }
 
+export function sortPairingIds(a: string, b: string): [string, string] {
+  return a < b ? [a, b] : [b, a]
+}
+
 interface RawPairing {
   oilAId: string
   oilBId: string

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { OilForm } from '../../OilForm'
 import { updateOil } from '../../actions'
 import { DeleteOilButton } from '../../DeleteOilButton'
+import { EnrichOilButton } from './EnrichOilButton'
+import { OilPairings } from './OilPairings'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,22 +17,39 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function EditOilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const oil = await prisma.oil.findUnique({ where: { id } })
+
+  const [oil, pairingsRaw, otherOils] = await Promise.all([
+    prisma.oil.findUnique({ where: { id } }),
+    prisma.oilPairing.findMany({
+      where: { OR: [{ oilAId: id }, { oilBId: id }] },
+      include: {
+        oilA: { select: { id: true, name: true } },
+        oilB: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.oil.findMany({ where: { NOT: { id } }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+  ])
+
   if (!oil) notFound()
+
+  const pairings = pairingsRaw.map((p) => ({
+    id: p.id,
+    otherId: p.oilAId === id ? p.oilBId : p.oilAId,
+    otherName: p.oilAId === id ? p.oilB.name : p.oilA.name,
+    rating: p.rating as 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE',
+    reason: p.reason,
+  })).sort((a, b) => a.otherName.localeCompare(b.otherName))
 
   const boundUpdate = updateOil.bind(null, id)
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link href="/admin" className="mb-6 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200">
-        ← Admin
-      </Link>
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">{oil.name}</h1>
           <p className="mt-1 text-sm italic text-stone-500 dark:text-stone-400">{oil.botanicalName}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-start gap-2">
           <Link
             href={`/oils/${oil.id}`}
             target="_blank"
@@ -38,10 +57,12 @@ export default async function EditOilPage({ params }: { params: Promise<{ id: st
           >
             View ↗
           </Link>
+          {process.env.ANTHROPIC_API_KEY && <EnrichOilButton oilId={oil.id} />}
           <DeleteOilButton id={oil.id} name={oil.name} />
         </div>
       </div>
       <OilForm oil={oil} action={boundUpdate} submitLabel="Save Changes" />
+      <OilPairings oilId={id} pairings={pairings} otherOils={otherOils} />
     </div>
   )
 }

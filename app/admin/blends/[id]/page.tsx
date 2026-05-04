@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { BlendMetaForm } from './BlendMetaForm'
 
@@ -27,15 +26,6 @@ export default async function AdminBlendEditPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <div className="mb-6 flex items-center gap-4">
-        <Link
-          href="/admin/blends"
-          className="text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
-        >
-          ← Blends
-        </Link>
-      </div>
-
       <h1 className="mb-1 font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">{blend.name}</h1>
       <div className="mb-8 flex flex-wrap gap-4 text-sm text-stone-500 dark:text-stone-400">
         <span>Grade {blend.grade}</span>

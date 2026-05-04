@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { seedDatabase, runEnrichment } from './actions'
 
 function StatusBanner({ result }: { result: { ok: boolean; message: string } }) {
@@ -18,14 +19,20 @@ function StatusBanner({ result }: { result: { ok: boolean; message: string } }) 
 }
 
 export function SeedButton() {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null)
+  const [seeded, setSeeded] = useState(false)
 
   function handleClick() {
     setResult(null)
     startTransition(async () => {
       const res = await seedDatabase()
       setResult(res)
+      if (res.ok) {
+        setSeeded(true)
+        router.refresh()
+      }
     })
   }
 
@@ -36,7 +43,7 @@ export function SeedButton() {
         disabled={pending}
         className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:opacity-50"
       >
-        {pending ? 'Seeding…' : 'Seed Database'}
+        {pending ? 'Seeding…' : seeded ? 'Re-run Seed' : 'Seed Database'}
       </button>
       {result && <StatusBanner result={result} />}
     </div>

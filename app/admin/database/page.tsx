@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { SeedButton, EnrichButton } from './DatabaseActions'
 
@@ -16,31 +15,9 @@ export default async function DatabasePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">Database</h1>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Seed and enrich the oil database</p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/admin"
-            className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-          >
-            Oils
-          </Link>
-          <Link
-            href="/admin/blends"
-            className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-          >
-            Blends
-          </Link>
-          <a
-            href="/admin/logout"
-            className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-          >
-            Sign Out
-          </a>
-        </div>
+      <div className="mb-8">
+        <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">Database</h1>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Seed and enrich the oil database</p>
       </div>
 
       {/* Stats */}

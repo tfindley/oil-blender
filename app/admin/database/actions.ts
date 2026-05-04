@@ -4,6 +4,7 @@ import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import fs from 'fs'
 import path from 'path'
+import { revalidatePath } from 'next/cache'
 
 const execFileAsync = promisify(execFile)
 
@@ -31,6 +32,7 @@ export async function seedDatabase(): Promise<{ ok: boolean; message: string }> 
       oilMatch || pairingMatch
         ? `${oilMatch?.[1] ?? '?'} oils, ${pairingMatch?.[1] ?? '?'} pairings`
         : 'complete'
+    revalidatePath('/admin/database')
     return { ok: true, message: `Seed ${detail}` }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
@@ -46,7 +48,7 @@ export async function runEnrichment(): Promise<{ ok: boolean; message: string }>
   // Detached — do not await; enrichment takes several minutes
   const child = spawn(cmd, args, {
     detached: true,
-    stdio: 'ignore',
+    stdio: 'inherit',
     env: { ...process.env },
   })
   child.unref()
