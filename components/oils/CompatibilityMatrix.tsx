@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 
 type Rating = 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE'
@@ -41,111 +41,17 @@ const RATINGS: { key: Rating; label: string; dot: string; text: string }[] = [
 
 const RATING_MAP = Object.fromEntries(RATINGS.map((r) => [r.key, r])) as Record<Rating, (typeof RATINGS)[0]>
 
-const BADGE_STYLES: Record<string, string> = {
-  EXCELLENT: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
-  GOOD:      'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
-  CAUTION:   'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
-  AVOID:     'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300',
-  UNSAFE:    'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
-}
-
 function pairingKey(a: string, b: string) {
   return a < b ? `${a}:${b}` : `${b}:${a}`
 }
 
 type FilterMode = 'all' | 'ESSENTIAL' | 'CARRIER'
 
-// Searchable oil combobox
-function OilCombobox({
-  oils,
-  selectedId,
-  onSelect,
-  placeholder,
-}: {
-  oils: Oil[]
-  selectedId: string | null
-  onSelect: (id: string | null) => void
-  placeholder: string
-}) {
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  const selectedOil = oils.find((o) => o.id === selectedId) ?? null
-  const displayValue = open ? query : (selectedOil?.name ?? query)
-
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase()
-    const pool = q
-      ? oils.filter(
-          (o) => o.name.toLowerCase().includes(q) || o.botanicalName.toLowerCase().includes(q),
-        )
-      : oils
-    return pool.slice(0, 20)
-  }, [oils, query])
-
-  useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
-    }
-    if (open) document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
-  }, [open])
-
-  return (
-    <div ref={containerRef} className="relative flex-1 min-w-0">
-      <input
-        type="text"
-        value={displayValue}
-        onChange={(e) => {
-          setQuery(e.target.value)
-          setOpen(true)
-          if (!e.target.value) onSelect(null)
-        }}
-        onFocus={() => { setOpen(true); setQuery('') }}
-        placeholder={placeholder}
-        className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 pr-8 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
-      />
-      {selectedOil && !open && (
-        <button
-          onClick={() => { onSelect(null); setQuery('') }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
-          aria-label="Clear"
-        >
-          ×
-        </button>
-      )}
-      {open && filtered.length > 0 && (
-        <ul className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-md border border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-800">
-          {filtered.map((o) => (
-            <li
-              key={o.id}
-              className="cursor-pointer px-3 py-2 text-sm hover:bg-amber-50 dark:hover:bg-stone-700"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => { onSelect(o.id); setQuery(''); setOpen(false) }}
-            >
-              <span className="font-medium text-stone-800 dark:text-stone-100">{o.name}</span>
-              <span className="ml-2 text-xs text-stone-400 dark:text-stone-500">
-                {o.type === 'ESSENTIAL' ? 'Essential' : 'Carrier'}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
 export function CompatibilityMatrix({ oils, pairingMap }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [filter, setFilter] = useState<FilterMode>('all')
   const [selectedRow, setSelectedRow] = useState<string | null>(null)
   const [selectedCol, setSelectedCol] = useState<string | null>(null)
-  const [compareAId, setCompareAId] = useState<string | null>(null)
-  const [compareBId, setCompareBId] = useState<string | null>(null)
   const [rowSearch, setRowSearch] = useState('')
   const [colSearch, setColSearch] = useState('')
 
@@ -169,14 +75,6 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
       : typeFilteredOils
   }, [typeFilteredOils, colSearch])
 
-  const comparePairing = useMemo(() => {
-    if (!compareAId || !compareBId || compareAId === compareBId) return undefined
-    return pairingMap[pairingKey(compareAId, compareBId)] ?? null
-  }, [compareAId, compareBId, pairingMap])
-
-  const compareOilA = useMemo(() => oils.find((o) => o.id === compareAId) ?? null, [oils, compareAId])
-  const compareOilB = useMemo(() => oils.find((o) => o.id === compareBId) ?? null, [oils, compareBId])
-
   const handleMouseEnter = useCallback(
     (e: React.MouseEvent, row: Oil, col: Oil) => {
       const key = pairingKey(row.id, col.id)
@@ -196,56 +94,6 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
 
   return (
     <div onMouseMove={handleMouseMove} onMouseLeave={() => setTooltip(null)}>
-
-      {/* ── Quick Compare ─────────────────────────────────────────────── */}
-      <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-          Quick Compare
-        </h2>
-        <div className="flex items-center gap-3">
-          <OilCombobox oils={oils} selectedId={compareAId} onSelect={setCompareAId} placeholder="Oil A…" />
-          <span className="shrink-0 text-sm text-stone-400">vs</span>
-          <OilCombobox oils={oils} selectedId={compareBId} onSelect={setCompareBId} placeholder="Oil B…" />
-        </div>
-
-        {compareAId && compareBId && compareAId === compareBId && (
-          <p className="mt-2 text-sm text-stone-400 dark:text-stone-500">Select two different oils to compare.</p>
-        )}
-
-        {compareAId && compareBId && compareAId !== compareBId && (
-          <div className="mt-3 rounded-lg bg-stone-50 p-3 dark:bg-stone-900/50">
-            <p className="mb-2 font-semibold text-stone-800 dark:text-stone-100">
-              {compareOilA?.name}{' '}
-              <span className="font-normal text-stone-400">×</span>{' '}
-              {compareOilB?.name}
-            </p>
-            {comparePairing === null ? (
-              <p className="text-sm text-stone-400 dark:text-stone-500">No pairing data recorded for this combination.</p>
-            ) : comparePairing ? (
-              <>
-                <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE_STYLES[comparePairing.rating] ?? BADGE_STYLES.GOOD}`}>
-                  {RATING_MAP[comparePairing.rating as Rating]?.label ?? comparePairing.rating}
-                </span>
-                <p className="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                  {comparePairing.reason}
-                </p>
-              </>
-            ) : null}
-            <div className="mt-2 flex gap-3 text-xs">
-              {compareOilA && (
-                <Link href={`/oils/${compareOilA.id}`} className="text-amber-700 hover:underline dark:text-amber-500">
-                  {compareOilA.name} profile →
-                </Link>
-              )}
-              {compareOilB && (
-                <Link href={`/oils/${compareOilB.id}`} className="text-amber-700 hover:underline dark:text-amber-500">
-                  {compareOilB.name} profile →
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* ── Controls ──────────────────────────────────────────────────── */}
       <div className="mb-4 space-y-3">

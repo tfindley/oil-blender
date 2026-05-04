@@ -40,6 +40,36 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#78716c',
   },
+  authorLine: {
+    fontSize: 9,
+    color: '#78716c',
+    marginTop: 2,
+  },
+  aboutText: {
+    fontSize: 10,
+    color: '#44403c',
+    marginTop: 8,
+    lineHeight: 1.5,
+  },
+  notesBox: {
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: '#fef3c7',
+    borderRadius: 4,
+  },
+  notesLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#92400e',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  notesText: {
+    fontSize: 9,
+    color: '#78350f',
+    lineHeight: 1.5,
+  },
   gradeBadge: {
     display: 'flex',
     flexDirection: 'row',
@@ -186,6 +216,12 @@ export function BlendReport({ blend, baseUrl, qrDataUrl }: BlendReportProps) {
           <Text style={styles.subtitle}>
             Created {date} · {blend.totalVolumeMl}ml · {(blend.dilutionRate * 100).toFixed(0)}% dilution
           </Text>
+          {blend.authorName && (
+            <Text style={styles.authorLine}>by {blend.authorName}</Text>
+          )}
+          {blend.about && (
+            <Text style={styles.aboutText}>{blend.about}</Text>
+          )}
           <View style={styles.gradeBadge}>
             <View
               style={[
@@ -266,6 +302,14 @@ export function BlendReport({ blend, baseUrl, qrDataUrl }: BlendReportProps) {
                 <Text style={styles.pairingReason}>{p.reason}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* User notes */}
+        {blend.notes && (
+          <View style={styles.notesBox}>
+            <Text style={styles.notesLabel}>Notes</Text>
+            <Text style={styles.notesText}>{blend.notes}</Text>
           </View>
         )}
 

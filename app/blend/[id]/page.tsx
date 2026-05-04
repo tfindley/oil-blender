@@ -117,9 +117,17 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm text-stone-500">{date}</p>
-          <h1 className="mt-1 font-serif text-3xl font-bold text-stone-900">{blend.name}</h1>
-          {blend.description && <p className="mt-1 text-stone-600">{blend.description}</p>}
-          <div className="mt-2 flex items-center gap-3 text-sm text-stone-500">
+          <h1 className="mt-1 font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">{blend.name}</h1>
+          {blend.authorName && (
+            <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">by {blend.authorName}</p>
+          )}
+          {blend.about && (
+            <p className="mt-1 text-stone-600 dark:text-stone-400">{blend.about}</p>
+          )}
+          {!blend.about && blend.description && (
+            <p className="mt-1 text-stone-600 dark:text-stone-400">{blend.description}</p>
+          )}
+          <div className="mt-2 flex items-center gap-3 text-sm text-stone-500 dark:text-stone-400">
             <span>{blend.totalVolumeMl}ml</span>
             <span>·</span>
             <span>{(blend.dilutionRate * 100).toFixed(0)}% dilution</span>
@@ -202,15 +210,27 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
           {/* Share */}
           <Card>
             <CardHeader>
-              <h2 className="font-serif text-lg font-semibold text-stone-800">Share This Blend</h2>
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Share This Blend</h2>
             </CardHeader>
             <CardBody className="space-y-3">
-              <p className="break-all rounded bg-stone-50 px-3 py-2 font-mono text-xs text-stone-600">
+              <p className="break-all rounded bg-stone-50 px-3 py-2 font-mono text-xs text-stone-600 dark:bg-stone-700 dark:text-stone-400">
                 {shareUrl}
               </p>
               <CopyButton text={shareUrl} />
             </CardBody>
           </Card>
+
+          {/* Notes */}
+          {blend.notes && (
+            <Card>
+              <CardHeader>
+                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Notes</h2>
+              </CardHeader>
+              <CardBody>
+                <p className="whitespace-pre-line text-sm text-stone-600 dark:text-stone-400">{blend.notes}</p>
+              </CardBody>
+            </Card>
+          )}
         </div>
       </div>
     </div>
