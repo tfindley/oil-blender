@@ -2,8 +2,8 @@
 
 **A free, open-source massage oil blend builder with real-time compatibility scoring, safety guidance, and printable recipe cards.**
 
-[![Release](https://img.shields.io/github/v/release/tfindley/oils)](https://github.com/tfindley/oils/releases)
-[![Docker](https://img.shields.io/badge/ghcr.io-tfindley%2Foils-blue)](https://github.com/tfindley/oils/pkgs/container/oils)
+[![Release](https://img.shields.io/github/v/release/tfindley/oil-blender)](https://github.com/tfindley/oil-blender/releases)
+[![Docker](https://img.shields.io/badge/ghcr.io-tfindley%2Foil-blender-blue)](https://github.com/tfindley/oil-blender/pkgs/container/oils)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -88,8 +88,8 @@ The **UNSAFE pairing list** (`scripts/unsafe-pairs.ts`) is hand-curated by the d
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/tfindley/oils.git
-cd oils
+git clone https://github.com/tfindley/oil-blender.git
+cd oil-blender
 npm install
 ```
 
@@ -253,7 +253,7 @@ docker build -t potions-and-lotions .
 ```yaml
 services:
   app:
-    image: ghcr.io/tfindley/oils:latest
+    image: ghcr.io/tfindley/oil-blender:latest
     ports:
       - "3000:3000"
     environment:
@@ -295,8 +295,8 @@ docker compose exec app npx tsx scripts/seed.ts
 Images are published to the GitHub Container Registry on every tagged release:
 
 ```bash
-docker pull ghcr.io/tfindley/oils:latest
-docker pull ghcr.io/tfindley/oils:0.0.1
+docker pull ghcr.io/tfindley/oil-blender:latest
+docker pull ghcr.io/tfindley/oil-blender:v0.0.7
 ```
 
 ---
@@ -314,7 +314,7 @@ git push origin v1.0.0
 
 This automatically:
 1. Builds the Docker image
-2. Pushes `ghcr.io/tfindley/oils:1.0.0` and `ghcr.io/tfindley/oils:latest` to GHCR
+2. Pushes `ghcr.io/tfindley/oil-blender:1.0.0` and `ghcr.io/tfindley/oil-blender:latest` to GHCR
 3. Creates a GitHub Release with Docker run instructions
 
 ---
@@ -322,7 +322,7 @@ This automatically:
 ## Project Structure
 
 ```
-oils/
+oil-blender/
 ├── app/                    # Next.js App Router pages
 │   ├── page.tsx            # Homepage (hero + featured blends + feature grid)
 │   ├── blend/              # Blend builder + saved blend detail
@@ -401,7 +401,7 @@ Blend grade is derived from the worst pairing:
 
 ## Contributing
 
-Issues and PRs welcome at [github.com/tfindley/oils](https://github.com/tfindley/oils/issues).
+Issues and PRs welcome at [github.com/tfindley/oil-blender](https://github.com/tfindley/oil-blender/issues).
 
 If you find an error in the oil data, incorrect safety information, or a missing UNSAFE pair, please open an issue — safety corrections are the highest priority.
 

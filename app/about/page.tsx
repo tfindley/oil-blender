@@ -191,7 +191,7 @@ export default function AboutPage() {
         <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Links</h2>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <a
-            href="https://github.com/tfindley/oils"
+            href="https://github.com/tfindley/oil-blender"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-800 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:hover:border-amber-600 dark:hover:bg-stone-700"
@@ -199,7 +199,7 @@ export default function AboutPage() {
             <span>⭐</span> View Source Code on GitHub
           </a>
           <a
-            href="https://github.com/tfindley/oils/issues"
+            href="https://github.com/tfindley/oil-blender/issues"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-800 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:hover:border-amber-600 dark:hover:bg-stone-700"

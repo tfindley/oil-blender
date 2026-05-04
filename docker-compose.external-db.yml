@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/tfindley/oils:latest
+    image: ghcr.io/tfindley/oil-blender:latest
     restart: unless-stopped
     ports:
       - "3000:3000"

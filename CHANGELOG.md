@@ -54,7 +54,7 @@ All notable changes to Potions & Lotions are documented here.
 ## [0.0.3] — 2026-05-04
 
 ### Added
-- `docker-compose.yml` now includes the `app` service pulling `ghcr.io/tfindley/oils:latest`, with a postgres healthcheck dependency
+- `docker-compose.yml` now includes the `app` service pulling `ghcr.io/tfindley/oil-blender:latest`, with a postgres healthcheck dependency
 - `docker-compose.build.yml` override file for building the image locally
 - `docker-compose.external-db.yml` for running against an existing database (reads from `.env.local`)
 - `docker-entrypoint.sh` runs database migrations automatically on container startup before starting the server
@@ -78,13 +78,14 @@ All notable changes to Potions & Lotions are documented here.
 - PDF recipe card download (client-side, via `@react-pdf/renderer`)
 - About page with AI/LLM transparency, tech stack, GitHub, Ko-Fi links
 - Multi-stage Dockerfile with standalone Next.js output
-- GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oils` on `v*.*.*` tag push, creates GitHub Release
+- GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oils/compare/v0.0.6...HEAD
-[0.0.6]: https://github.com/tfindley/oils/compare/v0.0.5...v0.0.6
-[0.0.5]: https://github.com/tfindley/oils/compare/v0.0.4...v0.0.5
-[0.0.4]: https://github.com/tfindley/oils/compare/v0.0.3...v0.0.4
-[0.0.3]: https://github.com/tfindley/oils/compare/v0.0.2...v0.0.3
-[0.0.2]: https://github.com/tfindley/oils/compare/v0.0.1...v0.0.2
-[0.0.1]: https://github.com/tfindley/oils/releases/tag/v0.0.1
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/tfindley/oil-blender/compare/v0.0.6...v0.0.7
+[0.0.6]: https://github.com/tfindley/oil-blender/compare/v0.0.5...v0.0.6
+[0.0.5]: https://github.com/tfindley/oil-blender/compare/v0.0.4...v0.0.5
+[0.0.4]: https://github.com/tfindley/oil-blender/compare/v0.0.3...v0.0.4
+[0.0.3]: https://github.com/tfindley/oil-blender/compare/v0.0.2...v0.0.3
+[0.0.2]: https://github.com/tfindley/oil-blender/compare/v0.0.1...v0.0.2
+[0.0.1]: https://github.com/tfindley/oil-blender/releases/tag/v0.0.1
