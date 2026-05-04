@@ -44,52 +44,40 @@ Oil Blender lets you:
 
 ## Quick Start (Docker)
 
-### 1. Create a `docker-compose.yml`
+### 1. Get the compose file
 
-```yaml
-services:
-  app:
-    image: ghcr.io/tfindley/oil-blender:latest
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://oils:oils@db:5432/oils
-      NEXT_PUBLIC_BASE_URL: https://your-domain.com
-      ADMIN_SECRET: your-strong-admin-password
-      CRON_SECRET: your-strong-cron-secret
-      NEXT_PUBLIC_SITE_NAME: Oil Blender          # optional — rename your deployment
-      NEXT_PUBLIC_GA_MEASUREMENT_ID: G-XXXXXXXXXX # optional — omit to disable analytics
-    depends_on:
-      db:
-        condition: service_healthy
+Download `docker-compose.yml` from this repository, or clone the repo:
 
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: oils
-      POSTGRES_PASSWORD: oils
-      POSTGRES_DB: oils
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U oils"]
-      interval: 5s
-      retries: 5
-
-volumes:
-  pg_data:
+```bash
+git clone https://github.com/tfindley/oil-blender.git
+cd oil-blender
 ```
 
-### 2. Pull and start
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set at minimum:
+
+```env
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
+ADMIN_SECRET=your-strong-admin-password
+CRON_SECRET=your-strong-cron-secret
+```
+
+### 3. Start
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Run migrations and seed
+### 4. Seed the database
+
+Database migrations run automatically on container startup. To load the built-in oil data:
 
 ```bash
-docker compose exec app node scripts/migrate.js
 docker compose exec app node scripts/seed.js
 ```
 
@@ -103,7 +91,7 @@ Images are published to the GitHub Container Registry on every tagged release:
 docker pull ghcr.io/tfindley/oil-blender:latest
 ```
 
-Specific version tags (e.g. `v0.0.11`) are also available — see [Releases](https://github.com/tfindley/oil-blender/releases).
+Specific version tags are also available — see [Releases](https://github.com/tfindley/oil-blender/releases).
 
 ---
 
@@ -117,7 +105,7 @@ Specific version tags (e.g. `v0.0.11`) are also available — see [Releases](htt
 | `CRON_SECRET` | Yes | — | Bearer token for the auto-purge endpoint |
 | `NEXT_PUBLIC_SITE_NAME` | No | `Oil Blender` | Display name shown in the header, footer, page titles, and PDF |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | — | Google Analytics 4 measurement ID (`G-XXXXXXXXXX`); omit to disable |
-| `ANTHROPIC_API_KEY` | No | — | Only needed to run the enrichment script (`node scripts/enrich.js`) |
+| `ANTHROPIC_API_KEY` | No | — | Enables AI enrichment via the Admin → Database panel and `node scripts/enrich.js` |
 
 ---
 
@@ -128,6 +116,13 @@ The admin panel is at `/admin`, protected by `ADMIN_SECRET`.
 ### Oil management
 
 `/admin` lists all oils. From here you can create new oils or edit existing ones (name, description, benefits, pairings, image URL, buy link, etc.).
+
+### Database tools
+
+`/admin/database` shows current oil, pairing, and blend counts with two actions:
+
+- **Seed Database** — loads the built-in 55 oils and ~96 pairings; safe to re-run
+- **Enrich Oils with AI** — calls the Claude API to generate richer descriptions and a full pairing matrix; only shown when `ANTHROPIC_API_KEY` is set; runs as a background process
 
 ### Blend management
 
@@ -178,8 +173,10 @@ Add this to the crontab on your host (runs at 03:00 daily):
 
 The container includes a bundled enrichment script that calls the Anthropic Claude API to generate richer oil descriptions and a complete pairing matrix.
 
+Set `ANTHROPIC_API_KEY` in your `.env` file, then trigger enrichment from the **Admin → Database** panel, or run it directly:
+
 ```bash
-docker compose exec -e ANTHROPIC_API_KEY=sk-ant-... app node scripts/enrich.js
+docker compose exec app node scripts/enrich.js
 ```
 
 The enrichment is idempotent — safe to re-run. Approximate cost: ~$0.05–0.15 USD for a full run.

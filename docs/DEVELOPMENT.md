@@ -50,10 +50,14 @@ ANTHROPIC_API_KEY="sk-ant-..."                  # only needed for npm run enrich
 
 ### 3. Start PostgreSQL
 
-**With Docker (starts a PostgreSQL container only):**
+**With Docker (standalone container, port exposed for local access):**
 ```bash
-docker compose up postgres -d
+docker run -d --name oils-db -p 5432:5432 \
+  -e POSTGRES_USER=oils -e POSTGRES_PASSWORD=oils -e POSTGRES_DB=oils \
+  postgres:16-alpine
 ```
+
+> The production `docker-compose.yml` does not expose the database port to the host — use the standalone `docker run` command above for development.
 
 **With an existing PostgreSQL install:**
 ```bash
@@ -132,7 +136,8 @@ oil-blender/
 │   ├── admin/              # Admin panel (oils + blends management)
 │   │   ├── page.tsx        # Oil list
 │   │   ├── oils/           # Oil create/edit
-│   │   └── blends/         # Blend list, edit, import/promote
+│   │   ├── blends/         # Blend list, edit, import/promote
+│   │   └── database/       # Seed and enrichment tools
 │   └── api/                # REST API + cron routes
 │       ├── blends/         # Create / fetch blends
 │       ├── oils/           # Oil data

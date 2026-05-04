@@ -4,6 +4,13 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.0.13] — 2026-05-05
+
+### Fixed
+- Container seed/enrich scripts failed with `Cannot find module 'postgres-array'` — copy the full `pg` transitive dependency tree into the runner image (`pg-protocol`, `pg-types`, `pg-connection-string`, `pg-int8`, `pg-cloudflare`, `pgpass`, `postgres-array`, `postgres-bytea`, `postgres-date`, `postgres-interval`)
+- `ANTHROPIC_API_KEY` not forwarded to the app container in `docker-compose.yml`; the Enrich button in the admin panel now works when the key is set in the host environment or `.env`
+- `docker-compose.yml`: removed host port binding on the postgres service (database is internal-only); added explicit `backend` bridge network so the two containers communicate without exposing the database port to the host
+
 ## [0.0.12] — 2026-05-04
 
 ### Added
@@ -132,7 +139,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.12...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.13...HEAD
+[0.0.13]: https://github.com/tfindley/oil-blender/compare/v0.0.12...v0.0.13
 [0.0.12]: https://github.com/tfindley/oil-blender/compare/v0.0.11...v0.0.12
 [0.0.11]: https://github.com/tfindley/oil-blender/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/tfindley/oil-blender/compare/v0.0.9...v0.0.10
