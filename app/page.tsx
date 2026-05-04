@@ -1,8 +1,32 @@
 import Link from 'next/link'
+import { prisma } from '@/lib/prisma'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
+import { BlendCard } from '@/components/blends/BlendCard'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+export default async function Home() {
+  const featuredBlends = await prisma.blend.findMany({
+    where: { isHidden: false, OR: [{ isFeatured: true }, { isPinned: true }] },
+    select: {
+      id: true,
+      name: true,
+      grade: true,
+      authorName: true,
+      about: true,
+      viewCount: true,
+      isPinned: true,
+      ingredients: {
+        where: { oil: { type: 'ESSENTIAL' } },
+        include: { oil: { select: { name: true } } },
+        take: 3,
+      },
+    },
+    orderBy: [{ isPinned: 'desc' }, { viewCount: 'desc' }],
+    take: 6,
+  })
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
@@ -31,6 +55,45 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Featured blends */}
+      {featuredBlends.length > 0 && (
+        <section className="px-4 py-16 bg-stone-50 dark:bg-stone-900/50">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8 flex items-end justify-between">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">
+                  Featured Blends
+                </h2>
+                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                  Curated recipes from our community — ready to make.
+                </p>
+              </div>
+              <Link
+                href="/blends"
+                className="shrink-0 text-sm font-medium text-amber-700 hover:underline dark:text-amber-500"
+              >
+                Explore all blends →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredBlends.map((b) => (
+                <BlendCard
+                  key={b.id}
+                  id={b.id}
+                  name={b.name}
+                  grade={b.grade}
+                  authorName={b.authorName}
+                  about={b.about}
+                  viewCount={b.viewCount}
+                  isPinned={b.isPinned}
+                  topOils={b.ingredients.map((i) => i.oil.name)}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Features */}
       <section className="px-4 py-16">
         <div className="mx-auto max-w-5xl">
@@ -52,7 +115,7 @@ export default function Home() {
               {
                 icon: '📄',
                 title: 'Printable Recipe Card',
-                body: 'Save your blend and download a PDF recipe card with ingredients, benefits, pairing notes, and a shareable URL.',
+                body: 'Save your blend and download a PDF recipe card with ingredients, benefits, pairing notes, and a QR code linking back to your blend.',
               },
               {
                 icon: '🔗',
@@ -61,8 +124,8 @@ export default function Home() {
               },
               {
                 icon: '🌿',
-                title: '45 Oils in the Library',
-                body: '30 essential oils and 15 carrier oils — each with origins, benefits, contraindications, and curated pairing data.',
+                title: '55 Oils in the Library',
+                body: '30 essential oils and 25 carrier oils — each with origins, benefits, contraindications, and curated pairing data.',
               },
               {
                 icon: '🛡️',

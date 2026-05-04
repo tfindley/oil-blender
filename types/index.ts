@@ -55,6 +55,13 @@ export interface BlendDetail {
   notes?: string | null
   grade: BlendGrade
   createdAt: string
+  viewCount: number
+  lastAccessedAt?: string | null
+  authorName?: string | null
+  about?: string | null
+  isFeatured: boolean
+  isPinned: boolean
+  isHidden: boolean
   ingredients: BlendIngredientSummary[]
   pairings: Array<{
     oilAId: string

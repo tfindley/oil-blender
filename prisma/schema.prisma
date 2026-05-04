@@ -59,16 +59,24 @@ model OilPairing {
 }
 
 model Blend {
-  id            String   @id @default(cuid())
-  name          String
-  description   String?
-  totalVolumeMl Float
-  dilutionRate  Float
-  purpose       String?
-  notes         String?
-  grade         String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String    @id @default(cuid())
+  name           String
+  description    String?
+  totalVolumeMl  Float
+  dilutionRate   Float
+  purpose        String?
+  notes          String?
+  grade          String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  viewCount      Int       @default(0)
+  lastAccessedAt DateTime?
+  authorName     String?
+  about          String?   @db.Text
+  isFeatured     Boolean   @default(false)
+  isPinned       Boolean   @default(false)
+  isHidden       Boolean   @default(false)
 
   ingredients BlendIngredient[]
 }

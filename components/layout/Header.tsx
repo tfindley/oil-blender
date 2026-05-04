@@ -18,6 +18,12 @@ export function Header() {
               Build a Blend
             </Link>
             <Link
+              href="/blends"
+              className="rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+            >
+              Blends
+            </Link>
+            <Link
               href="/oils"
               className="rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
             >

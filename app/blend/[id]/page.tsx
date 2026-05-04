@@ -37,6 +37,12 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
 
   if (!blend) notFound()
 
+  // Fire-and-forget — don't await so page render isn't delayed
+  prisma.blend.update({
+    where: { id },
+    data: { viewCount: { increment: 1 }, lastAccessedAt: new Date() },
+  }).catch(() => {})
+
   const oilIds = blend.ingredients.map((i) => i.oilId)
   const pairingsRaw = await prisma.oilPairing.findMany({
     where: { oilAId: { in: oilIds }, oilBId: { in: oilIds } },
@@ -67,6 +73,13 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
     notes: blend.notes,
     grade: blend.grade as BlendGrade,
     createdAt: blend.createdAt.toISOString(),
+    viewCount: blend.viewCount,
+    lastAccessedAt: blend.lastAccessedAt?.toISOString() ?? null,
+    authorName: blend.authorName,
+    about: blend.about,
+    isFeatured: blend.isFeatured,
+    isPinned: blend.isPinned,
+    isHidden: blend.isHidden,
     ingredients: blend.ingredients.map((i) => ({
       oilId: i.oilId,
       oilName: i.oil.name,
