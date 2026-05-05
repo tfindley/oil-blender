@@ -91,6 +91,9 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
 
   return (
     <div onMouseMove={handleMouseMove} onMouseLeave={() => setTooltip(null)}>
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 md:hidden">
+        Rotate to landscape for the best matrix experience.
+      </div>
 
       {/* ── Controls ──────────────────────────────────────────────────── */}
       <div className="mb-4 space-y-3">
@@ -141,7 +144,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
               value={rowSearch}
               onChange={(e) => setRowSearch(e.target.value)}
               placeholder="Filter rows…"
-              className="w-36 rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-sm focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+              className="w-36 rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-base md:text-sm focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -151,7 +154,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
               value={colSearch}
               onChange={(e) => setColSearch(e.target.value)}
               placeholder="Filter columns…"
-              className="w-36 rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-sm focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+              className="w-36 rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-base md:text-sm focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
             />
           </div>
           {hasAxisFilters && (

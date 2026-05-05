@@ -128,7 +128,7 @@ function OilCombobox({
           }}
           onFocus={() => { setOpen(true); setQuery('') }}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 pr-10 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+          className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 pr-10 text-base md:text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
         />
         {selectedOil && !open ? (
           <button
