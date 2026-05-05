@@ -8,6 +8,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-push:
@@ -45,7 +46,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
@@ -57,9 +58,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Potions & Lotions v${{ steps.version.outputs.version }}"
+          name: "Oil Blender v${{ steps.version.outputs.version }}"
           body: |
-            ## Potions & Lotions v${{ steps.version.outputs.version }}
+            ## Oil Blender v${{ steps.version.outputs.version }}
 
             ### Docker Image
 
@@ -78,6 +79,8 @@ jobs:
                 environment:
                   DATABASE_URL: postgresql://oils:oils@db:5432/oils
                   NEXT_PUBLIC_BASE_URL: http://localhost:3000
+                  ADMIN_SECRET: change-me
+                  CRON_SECRET: change-me
                 depends_on:
                   db:
                     condition: service_healthy
@@ -93,11 +96,10 @@ jobs:
                   retries: 5
             ```
 
-            After starting, run migrations and seed:
+            Database migrations run automatically on container startup. To seed the oil library:
             ```bash
-            docker compose exec app npx prisma migrate deploy
-            docker compose exec app npx tsx scripts/seed.ts
+            docker compose exec app node scripts/seed.js
             ```
 
-            See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for full setup instructions.
+            See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for full setup instructions including enrichment, analytics, and branding.
           generate_release_notes: true

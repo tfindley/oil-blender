@@ -5,18 +5,27 @@ import { Badge } from '@/components/ui/Badge'
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Admin' }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams
   const oils = await prisma.oil.findMany({
+    where: q ? {
+      OR: [
+        { name: { contains: q, mode: 'insensitive' } },
+        { botanicalName: { contains: q, mode: 'insensitive' } },
+      ],
+    } : undefined,
     select: { id: true, name: true, botanicalName: true, type: true, buyUrl: true, imageUrl: true, enrichedAt: true },
     orderBy: [{ type: 'asc' }, { name: 'asc' }],
   })
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">Oil Admin</h1>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{oils.length} oils in the library</p>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            {oils.length} oil{oils.length === 1 ? '' : 's'}{q ? ` matching "${q}"` : ' in the library'}
+          </p>
         </div>
         <Link
           href="/admin/oils/new"
@@ -26,53 +35,83 @@ export default async function AdminPage() {
         </Link>
       </div>
 
+      {/* Search */}
+      <form method="GET" className="mb-6 flex items-center gap-2">
+        <input
+          name="q"
+          defaultValue={q ?? ''}
+          placeholder="Search by name or botanical name…"
+          className="flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500 md:text-sm"
+        />
+        <button
+          type="submit"
+          className="rounded-md bg-stone-700 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 dark:bg-stone-600 dark:hover:bg-stone-500"
+        >
+          Search
+        </button>
+        {q && (
+          <Link
+            href="/admin"
+            className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+          >
+            Clear
+          </Link>
+        )}
+      </form>
+
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-stone-200 bg-stone-50 text-left dark:border-stone-700 dark:bg-stone-900">
-              <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Name</th>
-              <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Botanical</th>
-              <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Type</th>
-              <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Buy link</th>
-              <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Image</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
-            {oils.map((oil) => (
-              <tr key={oil.id} className="hover:bg-stone-50 dark:hover:bg-stone-700/50">
-                <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">
-                  {oil.name}
-                  {oil.enrichedAt === null && (
-                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-400">
-                      Unenriched
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3 italic text-stone-500 dark:text-stone-400">{oil.botanicalName}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={oil.type === 'ESSENTIAL' ? 'GOOD' : 'default'}>
-                    {oil.type === 'ESSENTIAL' ? 'Essential' : 'Carrier'}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 text-stone-400 dark:text-stone-500">
-                  {oil.buyUrl ? <span className="text-emerald-600 dark:text-emerald-500">✓</span> : '—'}
-                </td>
-                <td className="px-4 py-3 text-stone-400 dark:text-stone-500">
-                  {oil.imageUrl ? <span className="text-emerald-600 dark:text-emerald-500">✓</span> : '—'}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/admin/oils/${oil.id}`}
-                    className="rounded px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-500 dark:hover:bg-amber-950"
-                  >
-                    Edit
-                  </Link>
-                </td>
+        {oils.length === 0 ? (
+          <p className="px-4 py-8 text-center text-sm text-stone-500 dark:text-stone-400">
+            No oils found{q ? ` for "${q}"` : ''}.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-stone-200 bg-stone-50 text-left dark:border-stone-700 dark:bg-stone-900">
+                <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Name</th>
+                <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Botanical</th>
+                <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Type</th>
+                <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Enriched</th>
+                <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Buy</th>
+                <th className="px-4 py-3 font-semibold text-stone-700 dark:text-stone-300">Image</th>
+                <th className="px-4 py-3"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
+              {oils.map((oil) => (
+                <tr key={oil.id} className="hover:bg-stone-50 dark:hover:bg-stone-700/50">
+                  <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">{oil.name}</td>
+                  <td className="px-4 py-3 italic text-stone-500 dark:text-stone-400">{oil.botanicalName}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant={oil.type === 'ESSENTIAL' ? 'GOOD' : 'default'}>
+                      {oil.type === 'ESSENTIAL' ? 'Essential' : 'Carrier'}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    {oil.enrichedAt
+                      ? <span className="text-emerald-600 dark:text-emerald-500">✓</span>
+                      : <span className="text-amber-500 dark:text-amber-400">—</span>
+                    }
+                  </td>
+                  <td className="px-4 py-3 text-stone-400 dark:text-stone-500">
+                    {oil.buyUrl ? <span className="text-emerald-600 dark:text-emerald-500">✓</span> : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-stone-400 dark:text-stone-500">
+                    {oil.imageUrl ? <span className="text-emerald-600 dark:text-emerald-500">✓</span> : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/admin/oils/${oil.id}`}
+                      className="rounded px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-500 dark:hover:bg-amber-950"
+                    >
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )
