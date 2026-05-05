@@ -9,6 +9,17 @@ import { OilPairings } from './OilPairings'
 
 export const dynamic = 'force-dynamic'
 
+function enrichedRelative(date: Date): string {
+  const diff = Date.now() - date.getTime()
+  const minutes = Math.floor(diff / 60_000)
+  const hours = Math.floor(diff / 3_600_000)
+  const days = Math.floor(diff / 86_400_000)
+  if (minutes < 2) return 'just now'
+  if (minutes < 60) return `${minutes} minutes ago`
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+  return `${days} day${days === 1 ? '' : 's'} ago`
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const oil = await prisma.oil.findUnique({ where: { id }, select: { name: true } })
@@ -49,16 +60,25 @@ export default async function EditOilPage({ params }: { params: Promise<{ id: st
           <h1 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">{oil.name}</h1>
           <p className="mt-1 text-sm italic text-stone-500 dark:text-stone-400">{oil.botanicalName}</p>
         </div>
-        <div className="flex items-start gap-2">
-          <Link
-            href={`/oils/${oil.id}`}
-            target="_blank"
-            className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-          >
-            View ↗
-          </Link>
-          {process.env.ANTHROPIC_API_KEY && <EnrichOilButton oilId={oil.id} />}
-          <DeleteOilButton id={oil.id} name={oil.name} />
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-start gap-2">
+            <Link
+              href={`/oils/${oil.id}`}
+              target="_blank"
+              className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+            >
+              View ↗
+            </Link>
+            {process.env.ANTHROPIC_API_KEY && <EnrichOilButton oilId={oil.id} />}
+            <DeleteOilButton id={oil.id} name={oil.name} />
+          </div>
+          {oil.enrichedAt ? (
+            <p className="text-xs text-stone-400 dark:text-stone-500">
+              Enriched {enrichedRelative(oil.enrichedAt)}{oil.enrichmentModel ? `, ${oil.enrichmentModel}` : ''}
+            </p>
+          ) : (
+            <p className="text-xs text-amber-600 dark:text-amber-400">Not enriched yet</p>
+          )}
         </div>
       </div>
       <OilForm oil={oil} action={boundUpdate} submitLabel="Save Changes" />

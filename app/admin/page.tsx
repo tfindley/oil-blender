@@ -7,7 +7,7 @@ export const metadata = { title: 'Admin' }
 
 export default async function AdminPage() {
   const oils = await prisma.oil.findMany({
-    select: { id: true, name: true, botanicalName: true, type: true, buyUrl: true, imageUrl: true },
+    select: { id: true, name: true, botanicalName: true, type: true, buyUrl: true, imageUrl: true, enrichedAt: true },
     orderBy: [{ type: 'asc' }, { name: 'asc' }],
   })
 
@@ -41,7 +41,14 @@ export default async function AdminPage() {
           <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
             {oils.map((oil) => (
               <tr key={oil.id} className="hover:bg-stone-50 dark:hover:bg-stone-700/50">
-                <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">{oil.name}</td>
+                <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">
+                  <span>{oil.name}</span>
+                  {oil.enrichedAt === null && (
+                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                      Unenriched
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3 italic text-stone-500 dark:text-stone-400">{oil.botanicalName}</td>
                 <td className="px-4 py-3">
                   <Badge variant={oil.type === 'ESSENTIAL' ? 'GOOD' : 'default'}>

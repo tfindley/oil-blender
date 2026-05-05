@@ -25,7 +25,8 @@ interface CachedTextBlock {
   cache_control?: { type: 'ephemeral' }
 }
 
-const MODEL = 'claude-sonnet-4-6'
+export const ENRICHMENT_MODEL = 'claude-sonnet-4-6'
+const MODEL = ENRICHMENT_MODEL
 const INITIAL_MAX_TOKENS = 8192
 const RETRY_MAX_TOKENS = 16384
 
