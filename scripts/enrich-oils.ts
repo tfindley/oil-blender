@@ -70,12 +70,15 @@ async function upsertPairing(
 
 async function main() {
   const force = process.env.FORCE_REENRICH === '1'
-  const enriched = await prisma.oil.findMany({
-    where: { enrichedAt: { not: null } },
-    select: { name: true },
-  })
-  const enrichedNames = new Set(enriched.map((o) => o.name))
-  const todo = force ? OIL_DEFINITIONS : OIL_DEFINITIONS.filter((o) => !enrichedNames.has(o.name))
+  let todo = OIL_DEFINITIONS
+  if (!force) {
+    const enriched = await prisma.oil.findMany({
+      where: { enrichedAt: { not: null } },
+      select: { name: true },
+    })
+    const enrichedNames = new Set(enriched.map((o) => o.name))
+    todo = OIL_DEFINITIONS.filter((o) => !enrichedNames.has(o.name))
+  }
 
   console.log(
     force

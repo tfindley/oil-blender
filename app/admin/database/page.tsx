@@ -1,20 +1,10 @@
 import { prisma } from '@/lib/prisma'
+import { relativeTime } from '@/lib/format-time'
 import { SeedButton, EnrichButton, MigrationApplyButton } from './DatabaseActions'
 import { getMigrationStatus } from './migrations'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Database' }
-
-function relativeTime(date: Date): string {
-  const diff = Date.now() - date.getTime()
-  const minutes = Math.floor(diff / 60_000)
-  const hours = Math.floor(diff / 3_600_000)
-  const days = Math.floor(diff / 86_400_000)
-  if (minutes < 2) return 'just now'
-  if (minutes < 60) return `${minutes} minutes ago`
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
-  return `${days} day${days === 1 ? '' : 's'} ago`
-}
 
 export default async function DatabasePage() {
   const [oilCount, blendCount, pairingCount, unenrichedCount, migrationStatus] = await Promise.all([

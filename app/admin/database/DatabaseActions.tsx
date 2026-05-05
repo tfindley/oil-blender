@@ -89,7 +89,6 @@ export function EnrichButton({ unenrichedCount }: { unenrichedCount: number }) {
 }
 
 export function MigrationApplyButton() {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null)
 
@@ -98,7 +97,6 @@ export function MigrationApplyButton() {
     startTransition(async () => {
       const res = await applyPendingMigrations()
       setResult(res)
-      if (res.ok) router.refresh()
     })
   }
 

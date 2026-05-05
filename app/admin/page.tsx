@@ -42,7 +42,7 @@ export default async function AdminPage() {
             {oils.map((oil) => (
               <tr key={oil.id} className="hover:bg-stone-50 dark:hover:bg-stone-700/50">
                 <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">
-                  <span>{oil.name}</span>
+                  {oil.name}
                   {oil.enrichedAt === null && (
                     <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-400">
                       Unenriched

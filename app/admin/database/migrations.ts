@@ -15,32 +15,50 @@ export interface MigrationStatus {
   sql: string
 }
 
+async function readMigrationDirs(dir: string): Promise<string[]> {
+  try {
+    const entries = await fs.promises.readdir(dir)
+    return entries.filter((d) => !d.endsWith('.toml')).sort()
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return []
+    throw err
+  }
+}
+
+async function readMigrationSql(dir: string, name: string): Promise<string> {
+  try {
+    return await fs.promises.readFile(path.join(dir, name, 'migration.sql'), 'utf8')
+  } catch {
+    return ''
+  }
+}
+
 export async function getMigrationStatus(): Promise<{
   applied: MigrationStatus[]
   pending: MigrationStatus[]
   latest: MigrationStatus | null
 }> {
   const dir = path.join(process.cwd(), 'prisma', 'migrations')
-  const dirs = fs.existsSync(dir)
-    ? fs.readdirSync(dir).filter((d) => !d.endsWith('.toml')).sort()
-    : []
 
-  const rows = await (prisma.$queryRaw<Array<{ migration_name: string; finished_at: Date | null }>>`
+  const rowsP = prisma.$queryRaw<Array<{ migration_name: string; finished_at: Date | null }>>`
     SELECT migration_name, finished_at FROM "_prisma_migrations" ORDER BY started_at
-  `.catch(() => []))
+  `.catch(() => [])
+
+  const dirs = await readMigrationDirs(dir)
+  const rows = await rowsP
 
   const appliedMap = new Map(
     rows.filter((r) => r.finished_at).map((r) => [r.migration_name, r.finished_at!]),
   )
 
-  const all: MigrationStatus[] = dirs.map((name) => {
-    const sqlPath = path.join(dir, name, 'migration.sql')
-    return {
-      name,
-      appliedAt: appliedMap.get(name) ?? null,
-      sql: fs.existsSync(sqlPath) ? fs.readFileSync(sqlPath, 'utf8') : '',
-    }
-  })
+  const all: MigrationStatus[] = await Promise.all(
+    dirs.map(async (name) => {
+      const appliedAt = appliedMap.get(name) ?? null
+      // Only pending migrations need their SQL loaded for preview.
+      const sql = appliedAt === null ? await readMigrationSql(dir, name) : ''
+      return { name, appliedAt, sql }
+    }),
+  )
 
   const applied = all.filter((m) => m.appliedAt !== null)
   return {

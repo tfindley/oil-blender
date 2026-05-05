@@ -6,19 +6,9 @@ import { updateOil } from '../../actions'
 import { DeleteOilButton } from '../../DeleteOilButton'
 import { EnrichOilButton } from './EnrichOilButton'
 import { OilPairings } from './OilPairings'
+import { relativeTime } from '@/lib/format-time'
 
 export const dynamic = 'force-dynamic'
-
-function enrichedRelative(date: Date): string {
-  const diff = Date.now() - date.getTime()
-  const minutes = Math.floor(diff / 60_000)
-  const hours = Math.floor(diff / 3_600_000)
-  const days = Math.floor(diff / 86_400_000)
-  if (minutes < 2) return 'just now'
-  if (minutes < 60) return `${minutes} minutes ago`
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
-  return `${days} day${days === 1 ? '' : 's'} ago`
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -74,7 +64,7 @@ export default async function EditOilPage({ params }: { params: Promise<{ id: st
           </div>
           {oil.enrichedAt ? (
             <p className="text-xs text-stone-400 dark:text-stone-500">
-              Enriched {enrichedRelative(oil.enrichedAt)}{oil.enrichmentModel ? `, ${oil.enrichmentModel}` : ''}
+              Enriched {relativeTime(oil.enrichedAt)}{oil.enrichmentModel ? `, ${oil.enrichmentModel}` : ''}
             </p>
           ) : (
             <p className="text-xs text-amber-600 dark:text-amber-400">Not enriched yet</p>
