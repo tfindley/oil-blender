@@ -4,6 +4,29 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-05-06
+
+### Added
+- **Oil Compare tool** (`/oils/compare`) — side-by-side comparison of any two oils: full profiles on each side, compatibility verdict in the centre column with a coloured rating dot and reason text; swap button (⇄); searchable combobox selectors
+- **"Compare" nav link** added to the main header (desktop and mobile)
+- **Compatibility matrix row/column highlighting** — click any column header to highlight that column; click any row label to highlight the row; intersection cell gets a stronger tint to pinpoint the exact pairing
+- **Compatibility matrix axis search** — independent search inputs filter which oils appear on the row axis and column axis; Reset button clears all filters and highlights
+- **Blend notes** — optional freeform notes textarea on the blend save form; displayed as a sidebar card on the blend detail page and printed in the PDF recipe card
+- **Author and about on blend detail and PDF** — `authorName` shown as "by …" under the blend title; `about` shown as the blend description (takes precedence over `description`); both printed in the PDF header
+- **Mobile hamburger navigation** — responsive hamburger menu for screens narrower than `md` (768 px); outside-click or link navigation closes the menu; ThemeToggle included in the mobile bar
+- **PWA support** — web app manifest (`/manifest.json`), generated favicons at 32 × 32 and 180 × 180 px, `standalone` display mode, `appleWebApp` metadata; "Add to Home Screen" installation guide added to the About page
+- **Dark mode FOUC prevention** — synchronous inline `<script>` in `<head>` reads `localStorage` and applies the `dark` class before first paint; `suppressHydrationWarning` on `<html>` suppresses the inevitable React mismatch
+- **Per-oil enrichment tracking** — `enrichedAt` (timestamp) and `enrichmentModel` (string) fields added to the `Oil` schema; stamped on every successful enrichment (bulk and per-oil); a migration backfills existing rows so re-running enrichment on a live instance is a no-op
+- **Bulk enrichment skips already-enriched oils by default** — only unenriched oils are processed; set `FORCE_REENRICH=1` in the environment to override and re-enrich all; see [Enriching Oil Data](README.md#enriching-oil-data)
+- **Migration management UI** — new Migrations card at the top of `/admin/database` shows which migrations are applied/pending, renders a SQL preview for each pending migration, provides a one-click **Apply Pending Migrations** button, and includes collapsible manual shell instructions (restart container / exec migrate.js / raw SQL)
+- **"Unenriched" badge** on admin oil list — amber chip shown on any row where `enrichedAt` is null
+- **Enrichment status caption** on per-oil edit page — "Enriched N days ago, model" or "Not enriched yet" shown next to the Enrich button
+
+### Changed
+- **Enrich button is now tri-state** — `Enrich N oil(s)` (active), `All oils enriched` (disabled), or `Starting…` (pending); a **Force re-enrich all** secondary action appears when all oils are already enriched
+- **iOS input auto-zoom fix** — inputs on Oil Compare and Compatibility Matrix use `text-base` (16 px) on mobile to prevent Safari's auto-zoom on focus
+- Compatibility matrix Quick Compare panel removed and replaced by the dedicated `/oils/compare` page
+
 ## [0.0.13] — 2026-05-05
 
 ### Fixed
@@ -139,7 +162,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.0.13...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/tfindley/oil-blender/compare/v0.0.13...v0.1.0
 [0.0.13]: https://github.com/tfindley/oil-blender/compare/v0.0.12...v0.0.13
 [0.0.12]: https://github.com/tfindley/oil-blender/compare/v0.0.11...v0.0.12
 [0.0.11]: https://github.com/tfindley/oil-blender/compare/v0.0.10...v0.0.11

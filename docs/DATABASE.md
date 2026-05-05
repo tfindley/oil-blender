@@ -46,6 +46,8 @@ The master record for every oil in the library. Each oil is either an **essentia
 | `buyUrl` | `TEXT?` | Optional affiliate/purchase link |
 | `imageUrl` | `TEXT?` | Optional hero image URL |
 | `imageAlt` | `TEXT?` | Alt text for the image |
+| `enrichedAt` | `TIMESTAMP?` | Set when the oil is enriched via the Claude API; null means never enriched |
+| `enrichmentModel` | `TEXT?` | Model ID used for the last enrichment, e.g. `claude-sonnet-4-6` |
 | `createdAt` / `updatedAt` | `TIMESTAMP` | Managed by Prisma |
 
 **Relations:**
@@ -158,6 +160,7 @@ Blend ◄── BlendIngredient.blendId
 | `20260501232508_init` | Initial schema: `Oil`, `OilPairing`, `Blend`, `BlendIngredient`; both enums |
 | `20260504000000_add_oil_image` | Added `Oil.imageUrl`, `Oil.imageAlt` |
 | `20260504000002_blend_stats_featured` | Added `Blend.viewCount`, `lastAccessedAt`, `authorName`, `about`, `isFeatured`, `isPinned`, `isHidden` |
+| `20260505000000_oil_enrichment_metadata` | Added `Oil.enrichedAt`, `Oil.enrichmentModel`; backfills existing rows with `NOW()` and `'claude-sonnet-4-6'` |
 
 Migrations are applied automatically at container startup via [`scripts/migrate.js`](../scripts/migrate.js), which uses the `pg` package directly (no Prisma CLI required in the runtime image).
 
@@ -167,8 +170,9 @@ Migrations are applied automatically at container startup via [`scripts/migrate.
 
 **Seed** (`scripts/seed.ts` / `seed.js`) — upserts ~55 oils from [`scripts/oil-definitions.ts`](../scripts/oil-definitions.ts) and ~96 hand-curated EXCELLENT/CAUTION/UNSAFE pairings. Safe to re-run at any time.
 
-**Enrich** (`scripts/enrich-oils.ts` / `enrich.js`) — calls the Claude API to generate richer oil data (botanical context, origin, history, full descriptions) and a complete AI-generated pairing matrix for every oil. Runs in two passes:
-1. Upsert all oil fields
-2. Upsert all AI pairings, then apply the UNSAFE overrides from `unsafe-pairs.ts`
+**Enrich** (`scripts/enrich-oils.ts` / `enrich.js`) — calls the Claude API to generate richer oil data (botanical context, origin, history, full descriptions) and a complete AI-generated pairing matrix for every oil. By default only oils with `enrichedAt IS NULL` are processed; set `FORCE_REENRICH=1` to re-enrich all. Stamps `enrichedAt` and `enrichmentModel` on every successful upsert. Runs in three passes:
+1. Enrich and upsert all oil fields (skipping already-enriched unless forced)
+2. Upsert all AI-generated pairings
+3. Apply UNSAFE overrides from `unsafe-pairs.ts` (hand-curated, never AI-generated)
 
 Both scripts can be triggered from the Admin → Database panel in the web UI.

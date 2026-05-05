@@ -119,10 +119,11 @@ The admin panel is at `/admin`, protected by `ADMIN_SECRET`.
 
 ### Database tools
 
-`/admin/database` shows current oil, pairing, and blend counts with two actions:
+`/admin/database` shows current oil, pairing, and blend counts with three sections:
 
-- **Seed Database** — loads the built-in 55 oils and ~96 pairings; safe to re-run
-- **Enrich Oils with AI** — calls the Claude API to generate richer descriptions and a full pairing matrix; only shown when `ANTHROPIC_API_KEY` is set; runs as a background process
+- **Migrations** — shows whether the database schema is up to date; lists any pending migrations with SQL preview; one-click **Apply Pending Migrations** button with manual shell instruction fallback
+- **Seed Database** — loads the built-in 55 oils and ~96 pairings; safe to re-run (all operations are upserts)
+- **Enrich Oils with AI** — calls the Claude API to generate richer descriptions and a full pairing matrix; only shown when `ANTHROPIC_API_KEY` is set; runs as a background process; by default only processes oils that have never been enriched — use **Force re-enrich all** to override
 
 ### Blend management
 
@@ -179,7 +180,13 @@ Set `ANTHROPIC_API_KEY` in your `.env` file, then trigger enrichment from the **
 docker compose exec app node scripts/enrich.js
 ```
 
-The enrichment is idempotent — safe to re-run. Approximate cost: ~$0.05–0.15 USD for a full run.
+**By default the script only processes oils that have not yet been enriched** — this means re-running after a fresh seed is always safe and nearly free. To force re-enrichment of all oils (e.g. after a model upgrade):
+
+```bash
+docker compose exec -e FORCE_REENRICH=1 app node scripts/enrich.js
+```
+
+Approximate cost: ~$0.05–0.15 USD for a full run of all 55 oils.
 
 ---
 
