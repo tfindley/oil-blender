@@ -8,7 +8,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - `app/admin/` — admin panel; auth via `middleware.ts` + `ADMIN_SECRET` cookie. `layout.tsx` provides the shared nav (self-suppresses on `/admin/login` via `usePathname`).
 - `lib/pairing-utils.ts` — pairing helpers (`sortPairingIds`, `pairingKey`, `buildPairingMap`).
-- `lib/oil-enrichment.ts` — Claude-backed enrichment helper (prompt caching + truncation retry baked in).
+- `lib/oil-enrichment.ts` — Claude-backed enrichment helper (prompt caching + truncation retry baked in); exports `ENRICHMENT_MODEL`.
+- `lib/format-time.ts` — `relativeTime(date)` helper used across admin pages.
 - `scripts/migrate.js` — lightweight `pg`-only migration runner. The Prisma CLI is NOT in the runner image.
 - `scripts/seed.ts`, `scripts/enrich-oils.ts` — esbuilt to `.js` for the runner; locally run via `tsx`.
 - `docs/DATABASE.md` — full schema reference (models, relationships, enum semantics, migration history).

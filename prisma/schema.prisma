@@ -37,6 +37,8 @@ model Oil {
   buyUrl            String?
   imageUrl          String?
   imageAlt          String?
+  enrichedAt        DateTime?
+  enrichmentModel   String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

@@ -25,7 +25,7 @@ interface CachedTextBlock {
   cache_control?: { type: 'ephemeral' }
 }
 
-const MODEL = 'claude-sonnet-4-6'
+export const ENRICHMENT_MODEL = 'claude-sonnet-4-6'
 const INITIAL_MAX_TOKENS = 8192
 const RETRY_MAX_TOKENS = 16384
 
@@ -97,7 +97,7 @@ export async function enrichOilProfile(
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const response = await anthropic.messages.create({
-      model: MODEL,
+      model: ENRICHMENT_MODEL,
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: content as any }],
     })

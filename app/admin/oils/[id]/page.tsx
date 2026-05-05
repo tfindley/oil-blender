@@ -6,6 +6,7 @@ import { updateOil } from '../../actions'
 import { DeleteOilButton } from '../../DeleteOilButton'
 import { EnrichOilButton } from './EnrichOilButton'
 import { OilPairings } from './OilPairings'
+import { relativeTime } from '@/lib/format-time'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,16 +50,25 @@ export default async function EditOilPage({ params }: { params: Promise<{ id: st
           <h1 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">{oil.name}</h1>
           <p className="mt-1 text-sm italic text-stone-500 dark:text-stone-400">{oil.botanicalName}</p>
         </div>
-        <div className="flex items-start gap-2">
-          <Link
-            href={`/oils/${oil.id}`}
-            target="_blank"
-            className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-          >
-            View ↗
-          </Link>
-          {process.env.ANTHROPIC_API_KEY && <EnrichOilButton oilId={oil.id} />}
-          <DeleteOilButton id={oil.id} name={oil.name} />
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-start gap-2">
+            <Link
+              href={`/oils/${oil.id}`}
+              target="_blank"
+              className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+            >
+              View ↗
+            </Link>
+            {process.env.ANTHROPIC_API_KEY && <EnrichOilButton oilId={oil.id} />}
+            <DeleteOilButton id={oil.id} name={oil.name} />
+          </div>
+          {oil.enrichedAt ? (
+            <p className="text-xs text-stone-400 dark:text-stone-500">
+              Enriched {relativeTime(oil.enrichedAt)}{oil.enrichmentModel ? `, ${oil.enrichmentModel}` : ''}
+            </p>
+          ) : (
+            <p className="text-xs text-amber-600 dark:text-amber-400">Not enriched yet</p>
+          )}
         </div>
       </div>
       <OilForm oil={oil} action={boundUpdate} submitLabel="Save Changes" />

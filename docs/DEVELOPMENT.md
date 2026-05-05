@@ -112,14 +112,15 @@ The migration runner (`scripts/migrate.js`) tracks applied migrations in `_prism
 
 | Pass | What it does |
 |------|------|
-| **Pass 1** | Calls Claude API for each oil — generates full data including pairings |
+| **Pass 1** | Calls Claude API for each *unenriched* oil — generates full data including pairings; stamps `enrichedAt` and `enrichmentModel` on each upsert |
 | **Pass 2** | Resolves pairing oil names → database IDs; upserts pairing records |
-| **Pass 3** | Applies UNSAFE overrides from `scripts/unsafe-pairs.ts` (hand-curated) |
+| **Pass 3** | Applies UNSAFE overrides from `scripts/unsafe-pairs.ts` (hand-curated, never AI-generated) |
 
-- Rate-limited to 3 concurrent API calls (`p-limit`)
+- **Skips already-enriched oils by default** — only oils where `enrichedAt IS NULL` are processed; set `FORCE_REENRICH=1` to override: `FORCE_REENRICH=1 npm run enrich`
+- Rate-limited to 8 concurrent API calls (`p-limit`)
 - Fully idempotent — safe to re-run after failures
-- Approximate cost: ~$0.05–0.15 USD for a full enrichment run
-- Uses `claude-sonnet-4-6` by default — change the model constant in `scripts/enrich-oils.ts` if needed
+- Approximate cost: ~$0.05–0.15 USD for a full run of all 55 oils; re-runs on a fully enriched database cost nothing
+- Model constant exported as `ENRICHMENT_MODEL` from `lib/oil-enrichment.ts`
 
 ---
 
@@ -131,8 +132,8 @@ oil-blender/
 │   ├── page.tsx            # Homepage (hero + featured blends + feature grid)
 │   ├── blend/              # Blend builder + saved blend detail
 │   ├── blends/             # Public featured blends listing
-│   ├── oils/               # Oil catalog + individual oil pages
-│   ├── about/              # About page (privacy, analytics, tech stack)
+│   ├── oils/               # Oil catalog + individual oil pages + compare + matrix
+│   ├── about/              # About page (privacy, analytics, tech stack, PWA install)
 │   ├── admin/              # Admin panel (oils + blends management)
 │   │   ├── page.tsx        # Oil list
 │   │   ├── oils/           # Oil create/edit
@@ -146,7 +147,7 @@ oil-blender/
 ├── components/
 │   ├── analytics/          # GoogleAnalytics component
 │   ├── ui/                 # Button, Badge, Card, Input, Alert, CopyButton
-│   ├── layout/             # Header, Footer
+│   ├── layout/             # Header, Footer, MobileMenu, ThemeToggle
 │   ├── blend/              # BlendBuilder, CompatibilityPanel, QuantityTable…
 │   ├── blends/             # BlendCard (public-facing)
 │   ├── oils/               # OilCard
@@ -155,7 +156,9 @@ oil-blender/
 │   ├── prisma.ts           # Prisma client singleton
 │   ├── blend-calculator.ts # Volume/drop calculations
 │   ├── blend-scorer.ts     # A–F blend grading
-│   └── pairing-utils.ts    # Shared pairing key / map utilities
+│   ├── pairing-utils.ts    # Shared pairing key / map utilities
+│   ├── oil-enrichment.ts   # Claude enrichment helper (prompt caching, truncation retry); exports ENRICHMENT_MODEL
+│   └── format-time.ts      # relativeTime(date) helper
 ├── scripts/
 │   ├── migrate.js          # Lightweight migration runner (uses pg, no Prisma CLI)
 │   ├── oil-definitions.ts  # Oil name list

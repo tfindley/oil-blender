@@ -6,7 +6,7 @@ import pLimit from 'p-limit'
 import { OIL_DEFINITIONS, ALL_OIL_NAMES } from './oil-definitions.js'
 import { UNSAFE_PAIRS } from './unsafe-pairs.js'
 import { sortPairingIds } from '../lib/pairing-utils.js'
-import { enrichOilProfile, type OilEnrichment } from '../lib/oil-enrichment.js'
+import { enrichOilProfile, ENRICHMENT_MODEL, type OilEnrichment } from '../lib/oil-enrichment.js'
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://oils:oils@localhost:5432/oils' })
 const adapter = new PrismaPg(pool)
@@ -32,6 +32,8 @@ async function upsertOil(name: string, type: 'ESSENTIAL' | 'CARRIER', enrichment
       absorbency: enrichment.absorbency,
       shelfLifeMonths: enrichment.shelfLifeMonths,
       dilutionRateMax: enrichment.dilutionRateMax,
+      enrichedAt: new Date(),
+      enrichmentModel: ENRICHMENT_MODEL,
     },
     update: {
       botanicalName: enrichment.botanicalName,
@@ -45,6 +47,8 @@ async function upsertOil(name: string, type: 'ESSENTIAL' | 'CARRIER', enrichment
       absorbency: enrichment.absorbency,
       shelfLifeMonths: enrichment.shelfLifeMonths,
       dilutionRateMax: enrichment.dilutionRateMax,
+      enrichedAt: new Date(),
+      enrichmentModel: ENRICHMENT_MODEL,
     },
   })
   console.log(`  ✓ Upserted oil: ${name}`)
@@ -65,12 +69,36 @@ async function upsertPairing(
 }
 
 async function main() {
-  console.log('Pass 1: Enriching oil records...')
+  const force = process.env.FORCE_REENRICH === '1'
+  let todo = OIL_DEFINITIONS
+  if (!force) {
+    const enriched = await prisma.oil.findMany({
+      where: { enrichedAt: { not: null } },
+      select: { name: true },
+    })
+    const enrichedNames = new Set(enriched.map((o) => o.name))
+    todo = OIL_DEFINITIONS.filter((o) => !enrichedNames.has(o.name))
+  }
+
+  console.log(
+    force
+      ? `FORCE_REENRICH=1 → enriching all ${todo.length} oils`
+      : `${todo.length} of ${OIL_DEFINITIONS.length} oils need enrichment`,
+  )
+
+  if (todo.length === 0) {
+    console.log('Nothing to enrich. Use FORCE_REENRICH=1 to override.')
+    await prisma.$disconnect()
+    await pool.end()
+    return
+  }
+
+  console.log('\nPass 1: Enriching oil records...')
 
   const enrichments = new Map<string, OilEnrichment>()
 
   await Promise.all(
-    OIL_DEFINITIONS.map(({ name, type }) =>
+    todo.map(({ name, type }) =>
       limit(async () => {
         console.log(`Enriching: ${name}`)
         try {

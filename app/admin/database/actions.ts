@@ -40,17 +40,21 @@ export async function seedDatabase(): Promise<{ ok: boolean; message: string }> 
   }
 }
 
-export async function runEnrichment(): Promise<{ ok: boolean; message: string }> {
+export async function runEnrichment(force = false): Promise<{ ok: boolean; message: string }> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return { ok: false, message: 'ANTHROPIC_API_KEY is not set' }
   }
   const [cmd, args] = resolveScript('enrich.js', 'enrich-oils.ts')
-  // Detached — do not await; enrichment takes several minutes
   const child = spawn(cmd, args, {
     detached: true,
     stdio: 'inherit',
-    env: { ...process.env },
+    env: { ...process.env, ...(force ? { FORCE_REENRICH: '1' } : {}) },
   })
   child.unref()
-  return { ok: true, message: 'Enrichment started in the background. Check server logs for progress.' }
+  return {
+    ok: true,
+    message: force
+      ? 'Force re-enrichment started — re-processing all oils. Check server logs.'
+      : 'Enrichment started. Only oils not yet enriched will be processed. Check server logs.',
+  }
 }

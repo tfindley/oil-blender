@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { sortPairingIds } from '@/lib/pairing-utils'
-import { enrichOilProfile } from '@/lib/oil-enrichment'
+import { enrichOilProfile, ENRICHMENT_MODEL } from '@/lib/oil-enrichment'
 import type { PairingRating } from '@/types'
 
 export async function updatePairing(id: string, oilId: string, rating: PairingRating, reason: string) {
@@ -66,6 +66,8 @@ export async function enrichSingleOil(oilId: string): Promise<{ ok: boolean; mes
         absorbency: enrichment.absorbency ?? null,
         shelfLifeMonths: enrichment.shelfLifeMonths ?? null,
         dilutionRateMax: enrichment.dilutionRateMax ?? null,
+        enrichedAt: new Date(),
+        enrichmentModel: ENRICHMENT_MODEL,
       },
     })
 
