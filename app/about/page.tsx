@@ -235,6 +235,42 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Install as App */}
+      <section className="mb-10">
+        <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Add to Your Home Screen</h2>
+        <p className="mb-4 text-stone-600 dark:text-stone-400">
+          {siteName} works as a home screen app — no App Store required. Once installed it opens full-screen without browser chrome, just like a native app.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
+            <h3 className="mb-3 font-semibold text-stone-800 dark:text-stone-200">iPhone &amp; iPad</h3>
+            <ol className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">1.</span>Open the site in <strong>Safari</strong></li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">2.</span>Tap the <strong>Share</strong> button (□↑) in the toolbar</li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">3.</span>Scroll down and tap <strong>&ldquo;Add to Home Screen&rdquo;</strong></li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">4.</span>Tap <strong>Add</strong> — done!</li>
+            </ol>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
+            <h3 className="mb-3 font-semibold text-stone-800 dark:text-stone-200">Android</h3>
+            <ol className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">1.</span>Open the site in <strong>Chrome</strong></li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">2.</span>Tap the menu <strong>⋮</strong> in the top right</li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">3.</span>Tap <strong>&ldquo;Install app&rdquo;</strong> or <strong>&ldquo;Add to Home Screen&rdquo;</strong></li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">4.</span>Tap <strong>Install</strong> to confirm</li>
+            </ol>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
+            <h3 className="mb-3 font-semibold text-stone-800 dark:text-stone-200">Desktop</h3>
+            <ol className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">1.</span>Open in <strong>Chrome</strong> or <strong>Edge</strong></li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">2.</span>Click the <strong>install icon ⊕</strong> in the address bar</li>
+              <li className="flex gap-2"><span className="shrink-0 font-semibold text-amber-700 dark:text-amber-500">3.</span>Click <strong>Install</strong></li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
       {/* Disclaimer */}
       <div className="rounded-xl border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
         <h3 className="mb-2 font-semibold text-stone-800 dark:text-stone-200">Disclaimer</h3>
