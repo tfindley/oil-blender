@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 export const dynamic = 'force-dynamic'
 import { PairingBadge } from '@/components/blend/PairingBadge'
 import { Badge } from '@/components/ui/Badge'
-import { QuantityTable } from '@/components/blend/QuantityTable'
+import { BlendScaler } from '@/components/blend/BlendScaler'
 import { CompatibilityPanel } from '@/components/blend/CompatibilityPanel'
 import { BlendPdfDownload } from '@/components/blend/BlendPdfDownload'
 import { CopyButton } from '@/components/ui/CopyButton'
@@ -95,14 +95,11 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
   const shareUrl = `${baseUrl}/blend/${id}`
 
-  const calcIngredients = blendDetail.ingredients.map((i) => ({
+  const scalerIngredients = blendDetail.ingredients.map((i) => ({
     oilId: i.oilId,
     name: i.oilName,
     type: i.oilType,
     percentagePct: i.percentagePct,
-    volumeMl: i.volumeMl,
-    drops: i.drops,
-    dilutionRateMax: null,
   }))
 
   const date = new Date(blend.createdAt).toLocaleDateString('en-GB', {
@@ -130,8 +127,11 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
             <Badge variant={blend.grade as BlendGrade}>Grade {blend.grade}</Badge>
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <BlendPdfDownload blend={blendDetail} baseUrl={baseUrl} />
+          <Link href={`/blend?from=${blend.id}`}>
+            <Button variant="secondary">Build from this blend</Button>
+          </Link>
           <Link href="/blend">
             <Button variant="secondary">Build Another</Button>
           </Link>
@@ -145,8 +145,12 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
             <CardHeader>
               <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Ingredients</h2>
             </CardHeader>
-            <CardBody className="p-0">
-              <QuantityTable ingredients={calcIngredients} totalVolumeMl={blend.totalVolumeMl} />
+            <CardBody>
+              <BlendScaler
+                originalVolumeMl={blend.totalVolumeMl}
+                dilutionRate={blend.dilutionRate}
+                ingredients={scalerIngredients}
+              />
             </CardBody>
           </Card>
 

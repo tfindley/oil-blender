@@ -37,16 +37,22 @@ interface Pairing {
 interface BlendBuilderProps {
   carriers: OilSummary[]
   essentials: OilSummary[]
+  initialBlend?: {
+    carrier: OilSummary | null
+    essentials: Array<{ oil: OilSummary; percentagePct: number }>
+    totalVolumeMl: number
+    dilutionRate: number
+  }
 }
 
-export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
+export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilderProps) {
   const router = useRouter()
 
-  const [carrier, setCarrier] = useState<OilSummary | null>(null)
-  const [selectedEOs, setSelectedEOs] = useState<SelectedEO[]>([])
-  const [totalVolumeMl, setTotalVolumeMl] = useState(50)
+  const [carrier, setCarrier] = useState<OilSummary | null>(initialBlend?.carrier ?? null)
+  const [selectedEOs, setSelectedEOs] = useState<SelectedEO[]>(initialBlend?.essentials ?? [])
+  const [totalVolumeMl, setTotalVolumeMl] = useState(initialBlend?.totalVolumeMl ?? 50)
   const [customVolume, setCustomVolume] = useState('')
-  const [dilutionRate, setDilutionRate] = useState(0.02)
+  const [dilutionRate, setDilutionRate] = useState(initialBlend?.dilutionRate ?? 0.02)
   const [pairings, setPairings] = useState<Pairing[]>([])
   const [blendName, setBlendName] = useState('')
   const [blendNotes, setBlendNotes] = useState('')
@@ -71,6 +77,22 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
   }, [carrier?.id, selectedEOs.map((e) => e.oil.id).join(',')]) // eslint-disable-line
 
   const score = scoreBlend(pairings)
+  const hasBlend = !!carrier && selectedEOs.length > 0
+
+  function handleReset() {
+    setCarrier(null)
+    setSelectedEOs([])
+    setTotalVolumeMl(50)
+    setCustomVolume('')
+    setDilutionRate(0.02)
+    setPairings([])
+    setBlendName('')
+    setBlendNotes('')
+    setSaveError('')
+    setAvoidAcknowledged(false)
+    setEoSearch('')
+    setEoMode('search')
+  }
 
   const ingredientInputs = [
     ...(carrier ? [{ oilId: carrier.id, name: carrier.name, type: 'CARRIER' as const, percentagePct: 100 - dilutionRate * 100 }] : []),
@@ -377,7 +399,17 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
         {/* Blend composition */}
         <Card>
           <CardHeader>
-            <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Your Blend</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Your Blend</h2>
+              {(carrier || selectedEOs.length > 0) && (
+                <button
+                  onClick={handleReset}
+                  className="rounded px-3 py-1.5 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
 
@@ -509,7 +541,7 @@ export function BlendBuilder({ carriers, essentials }: BlendBuilderProps) {
             <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Compatibility</h2>
           </CardHeader>
           <CardBody className="space-y-5">
-            <CompatibilityPanel grade={score.grade} summary={score.summary} pairings={pairings} />
+            {hasBlend && <CompatibilityPanel grade={score.grade} summary={score.summary} pairings={pairings} />}
 
             {unsafePairings.length > 0 && (
               <Alert variant="unsafe" title="Unsafe combination">

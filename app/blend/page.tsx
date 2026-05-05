@@ -9,25 +9,54 @@ export const metadata = {
   description: 'Create a custom massage oil blend with compatibility scoring and a printable recipe card.',
 }
 
-export default async function BlendPage() {
-  const oils = await prisma.oil.findMany({
-    select: {
-      id: true,
-      name: true,
-      botanicalName: true,
-      type: true,
-      aroma: true,
-      benefits: true,
-      description: true,
-      consistency: true,
-      absorbency: true,
-      dilutionRateMax: true,
-    },
-    orderBy: { name: 'asc' },
-  })
+const OIL_SELECT = {
+  id: true,
+  name: true,
+  botanicalName: true,
+  type: true,
+  aroma: true,
+  benefits: true,
+  description: true,
+  consistency: true,
+  absorbency: true,
+  dilutionRateMax: true,
+} as const
 
-  const carriers = oils.filter((o: typeof oils[number]) => o.type === 'CARRIER') as OilSummary[]
-  const essentials = oils.filter((o: typeof oils[number]) => o.type === 'ESSENTIAL') as OilSummary[]
+export default async function BlendPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+  const { from } = await searchParams
+
+  const [oils, fromBlendData] = await Promise.all([
+    prisma.oil.findMany({ select: OIL_SELECT, orderBy: { name: 'asc' } }),
+    from
+      ? prisma.blend.findUnique({
+          where: { id: from },
+          select: {
+            totalVolumeMl: true,
+            dilutionRate: true,
+            ingredients: {
+              select: {
+                percentagePct: true,
+                oil: { select: OIL_SELECT },
+              },
+            },
+          },
+        })
+      : Promise.resolve(null),
+  ])
+
+  const carriers = oils.filter((o) => o.type === 'CARRIER') as OilSummary[]
+  const essentials = oils.filter((o) => o.type === 'ESSENTIAL') as OilSummary[]
+
+  const initialBlend = fromBlendData
+    ? {
+        carrier: (fromBlendData.ingredients.find((i) => i.oil.type === 'CARRIER')?.oil ?? null) as OilSummary | null,
+        essentials: fromBlendData.ingredients
+          .filter((i) => i.oil.type === 'ESSENTIAL')
+          .map((i) => ({ oil: i.oil as OilSummary, percentagePct: i.percentagePct })),
+        totalVolumeMl: fromBlendData.totalVolumeMl,
+        dilutionRate: fromBlendData.dilutionRate,
+      }
+    : undefined
 
   if (oils.length === 0) {
     return (
@@ -51,7 +80,7 @@ export default async function BlendPage() {
           Choose a carrier oil, add essential oils, and see your compatibility score in real time.
         </p>
       </div>
-      <BlendBuilder carriers={carriers} essentials={essentials} />
+      <BlendBuilder carriers={carriers} essentials={essentials} initialBlend={initialBlend} />
     </div>
   )
 }
