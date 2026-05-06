@@ -173,7 +173,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
 
       {/* ── Matrix ────────────────────────────────────────────────────── */}
       <div className="overflow-auto rounded-xl border border-stone-200 dark:border-stone-700">
-        <table className="border-collapse" style={{ tableLayout: 'fixed' }}>
+        <table className="border-separate" style={{ borderSpacing: 0, tableLayout: 'fixed' }}>
           <thead>
             <tr>
               {/* corner cell */}

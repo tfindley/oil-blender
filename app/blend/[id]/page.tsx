@@ -95,6 +95,11 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
   const shareUrl = `${baseUrl}/blend/${id}`
 
+  const isProtected = blend.isFeatured || blend.isPinned
+  const lastAccess = blend.lastAccessedAt ?? blend.createdAt
+  const daysSinceAccess = Math.floor((Date.now() - lastAccess.getTime()) / 86_400_000)
+  const daysUntilPurge = 30 - daysSinceAccess
+
   const scalerIngredients = blendDetail.ingredients.map((i) => ({
     oilId: i.oilId,
     name: i.oilName,
@@ -216,6 +221,15 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
                 {shareUrl}
               </p>
               <CopyButton text={shareUrl} />
+              {!isProtected && (
+                daysUntilPurge <= 10
+                  ? <p className="text-xs text-amber-700 dark:text-amber-500">
+                      Last visited {daysSinceAccess} day{daysSinceAccess === 1 ? '' : 's'} ago — this blend will be auto-removed in {Math.max(0, daysUntilPurge)} day{daysUntilPurge === 1 ? '' : 's'} unless opened again.
+                    </p>
+                  : <p className="text-xs text-stone-400 dark:text-stone-500">
+                      Blends are auto-removed after 30 days without a visit — opening this page counts as a visit.
+                    </p>
+              )}
             </CardBody>
           </Card>
 

@@ -139,6 +139,17 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     setSelectedEOs(selectedEOs.map((e) => (e.oil.id === id ? { ...e, percentagePct: pct } : e)))
   }
 
+  function normalizePercentages() {
+    const sum = selectedEOs.reduce((s, e) => s + e.percentagePct, 0)
+    const target = dilutionRate * 100
+    if (sum <= 0) {
+      const pctEach = target / selectedEOs.length
+      setSelectedEOs(selectedEOs.map((e) => ({ ...e, percentagePct: pctEach })))
+    } else {
+      setSelectedEOs(selectedEOs.map((e) => ({ ...e, percentagePct: (e.percentagePct / sum) * target })))
+    }
+  }
+
   function isUnsafeWithCurrent(eo: OilSummary): Pairing | undefined {
     return pairings.find(
       (p) =>
@@ -470,6 +481,14 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                     </div>
                   ))}
                 </div>
+              )}
+              {selectedEOs.length > 0 && Math.abs(selectedEOs.reduce((s, e) => s + e.percentagePct, 0) - dilutionRate * 100) > 0.1 && (
+                <button
+                  onClick={normalizePercentages}
+                  className="mt-1.5 text-xs text-amber-700 hover:underline dark:text-amber-500"
+                >
+                  Percentages don't sum to {(dilutionRate * 100).toFixed(1)}% — normalize
+                </button>
               )}
             </div>
 
