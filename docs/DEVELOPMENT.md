@@ -93,6 +93,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+> **Stale cache?** If a Tailwind class change, server-component output, or Prisma type doesn't seem to update, clear the Next.js build cache and restart: `rm -rf .next && npm run dev`. HMR usually picks up changes on its own — only reach for this when something looks frozen.
+
 ---
 
 ## Schema Changes

@@ -223,7 +223,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
                     title={`Click to highlight row: ${row.name}`}
                     className={`sticky left-0 z-10 cursor-pointer border-r border-stone-200 px-2 py-0.5 transition-colors dark:border-stone-700 ${
                       isRowHighlighted
-                        ? 'bg-amber-100 dark:bg-amber-900/30'
+                        ? 'bg-amber-100 dark:bg-amber-950'
                         : 'bg-white dark:bg-stone-900'
                     }`}
                     style={{ width: 160, minWidth: 160 }}
@@ -252,11 +252,11 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
                       return (
                         <td
                           key={col.id}
-                          className={
+                          className={`relative z-0 ${
                             isRowHighlighted || isColHighlighted
                               ? 'bg-amber-100 dark:bg-amber-900/30'
                               : 'bg-stone-100 dark:bg-stone-800'
-                          }
+                          }`}
                           style={{ width: 30, height: 30 }}
                         />
                       )
@@ -275,7 +275,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
                     return (
                       <td
                         key={col.id}
-                        className={`cursor-pointer transition-colors hover:brightness-95 ${cellBg}`}
+                        className={`relative z-0 cursor-pointer transition-colors hover:brightness-95 ${cellBg}`}
                         style={{ width: 30, height: 30 }}
                         onMouseEnter={(e) => handleMouseEnter(e, row, col)}
                       >
