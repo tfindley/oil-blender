@@ -4,13 +4,31 @@ import { useActionState } from 'react'
 import { Button } from '@/components/ui/Button'
 import type { Oil } from '@prisma/client'
 
+interface InitialValues {
+  name?: string
+  botanicalName?: string
+  type?: 'ESSENTIAL' | 'CARRIER'
+  origin?: string
+  history?: string
+  description?: string
+  aroma?: string
+  benefits?: string
+  contraindications?: string
+  consistency?: string
+  absorbency?: string
+  shelfLifeMonths?: string
+  dilutionRateMax?: string
+}
+
 interface OilFormProps {
   oil?: Oil
+  initialValues?: InitialValues
+  pairingsJson?: string
   action: (prev: unknown, data: FormData) => Promise<unknown>
   submitLabel: string
 }
 
-export function OilForm({ oil, action, submitLabel }: OilFormProps) {
+export function OilForm({ oil, initialValues, pairingsJson, action, submitLabel }: OilFormProps) {
   const [state, formAction, pending] = useActionState(action, null)
 
   return (
@@ -26,9 +44,11 @@ export function OilForm({ oil, action, submitLabel }: OilFormProps) {
         </p>
       )}
 
+      {pairingsJson && <input type="hidden" name="pairings" value={pairingsJson} />}
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="Common Name" name="name" defaultValue={oil?.name} required />
-        <Field label="Botanical Name" name="botanicalName" defaultValue={oil?.botanicalName} required />
+        <Field label="Common Name" name="name" defaultValue={oil?.name ?? initialValues?.name} required />
+        <Field label="Botanical Name" name="botanicalName" defaultValue={oil?.botanicalName ?? initialValues?.botanicalName} required />
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -36,39 +56,39 @@ export function OilForm({ oil, action, submitLabel }: OilFormProps) {
           <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">Type</label>
           <select
             name="type"
-            defaultValue={oil?.type ?? 'ESSENTIAL'}
+            defaultValue={oil?.type ?? initialValues?.type ?? 'ESSENTIAL'}
             className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
           >
             <option value="ESSENTIAL">Essential Oil</option>
             <option value="CARRIER">Carrier Oil</option>
           </select>
         </div>
-        <Field label="Origin" name="origin" defaultValue={oil?.origin} required />
+        <Field label="Origin" name="origin" defaultValue={oil?.origin ?? initialValues?.origin} required />
       </div>
 
-      <Field label="Description" name="description" defaultValue={oil?.description} textarea required />
-      <Field label="History" name="history" defaultValue={oil?.history} textarea required />
-      <Field label="Aroma" name="aroma" defaultValue={oil?.aroma} required />
+      <Field label="Description" name="description" defaultValue={oil?.description ?? initialValues?.description} textarea required />
+      <Field label="History" name="history" defaultValue={oil?.history ?? initialValues?.history} textarea required />
+      <Field label="Aroma" name="aroma" defaultValue={oil?.aroma ?? initialValues?.aroma} required />
 
       <Field
         label="Benefits (one per line)"
         name="benefits"
-        defaultValue={oil?.benefits.join('\n')}
+        defaultValue={oil?.benefits.join('\n') ?? initialValues?.benefits}
         textarea
         required
       />
       <Field
         label="Contraindications (one per line)"
         name="contraindications"
-        defaultValue={oil?.contraindications.join('\n')}
+        defaultValue={oil?.contraindications.join('\n') ?? initialValues?.contraindications}
         textarea
       />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Consistency" name="consistency" defaultValue={oil?.consistency ?? ''} placeholder="e.g. light" />
-        <Field label="Absorbency" name="absorbency" defaultValue={oil?.absorbency ?? ''} placeholder="e.g. fast" />
-        <Field label="Shelf Life (months)" name="shelfLifeMonths" type="number" defaultValue={oil?.shelfLifeMonths?.toString() ?? ''} />
-        <Field label="Max Dilution (0–1)" name="dilutionRateMax" type="number" step="0.01" defaultValue={oil?.dilutionRateMax?.toString() ?? ''} placeholder="e.g. 0.03" />
+        <Field label="Consistency" name="consistency" defaultValue={oil?.consistency ?? initialValues?.consistency ?? ''} placeholder="e.g. light" />
+        <Field label="Absorbency" name="absorbency" defaultValue={oil?.absorbency ?? initialValues?.absorbency ?? ''} placeholder="e.g. fast" />
+        <Field label="Shelf Life (months)" name="shelfLifeMonths" type="number" defaultValue={oil?.shelfLifeMonths?.toString() ?? initialValues?.shelfLifeMonths ?? ''} />
+        <Field label="Max Dilution (0–1)" name="dilutionRateMax" type="number" step="0.01" defaultValue={oil?.dilutionRateMax?.toString() ?? initialValues?.dilutionRateMax ?? ''} placeholder="e.g. 0.03" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">

@@ -86,7 +86,7 @@ export default function AboutPage() {
       </section>
 
       {/* AI Transparency */}
-      <Card className="mb-10 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50">
+      <Card id="ai" className="mb-10 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50">
         <CardHeader>
           <h2 className="font-serif text-xl font-semibold text-amber-900 dark:text-amber-300">AI &amp; LLM Transparency</h2>
         </CardHeader>
@@ -202,6 +202,20 @@ export default function AboutPage() {
             </a>
           ))}
         </div>
+      </section>
+
+      {/* Glossary */}
+      <section className="mb-10">
+        <h2 className="mb-2 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Terminology</h2>
+        <p className="mb-4 text-stone-600 dark:text-stone-400">
+          Unfamiliar with a term in an oil profile? The glossary covers common aromatherapy vocabulary — therapeutic properties, carrier oil qualities, fatty acids, and blending concepts.
+        </p>
+        <Link
+          href="/about/glossary"
+          className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-800 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:hover:border-amber-600 dark:hover:bg-stone-700"
+        >
+          <span>📖</span> Aromatherapy Glossary
+        </Link>
       </section>
 
       {/* Links */}

@@ -158,6 +158,65 @@ export async function createOil(_prev: unknown, data: FormData) {
   }
 }
 
+export async function previewEnrichment(
+  name: string,
+  type: 'ESSENTIAL' | 'CARRIER',
+): Promise<import('@/lib/oil-enrichment').OilEnrichment | { error: string }> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { error: 'ANTHROPIC_API_KEY is not set' }
+  }
+  const allOils = await prisma.oil.findMany({ select: { name: true } })
+  const allOilNames = allOils.map((o) => o.name)
+  try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    return await enrichOilProfile(anthropic, name, type, allOilNames)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return { error: msg.slice(0, 300) }
+  }
+}
+
+export async function createEnrichedOil(_prev: unknown, data: FormData) {
+  try {
+    const oil = await prisma.oil.create({
+      data: { ...parseOilForm(data), enrichedAt: new Date(), enrichmentModel: ENRICHMENT_MODEL },
+    })
+
+    const pairingsRaw = data.get('pairings')?.toString()
+    if (pairingsRaw) {
+      const pairings = JSON.parse(pairingsRaw) as Array<{ name: string; rating: string; reason: string }>
+      const allOils = await prisma.oil.findMany({ select: { id: true, name: true } })
+      const oilByName = new Map(allOils.map((o) => [o.name, o.id]))
+      await Promise.all(
+        pairings
+          .map((p) => ({ otherId: oilByName.get(p.name), rating: p.rating, reason: p.reason }))
+          .filter((p): p is { otherId: string; rating: string; reason: string } => !!p.otherId && p.otherId !== oil.id)
+          .map(async ({ otherId, rating, reason }) => {
+            const [idA, idB] = sortPairingIds(oil.id, otherId)
+            try {
+              await prisma.oilPairing.upsert({
+                where: { oilAId_oilBId: { oilAId: idA, oilBId: idB } },
+                create: { oilAId: idA, oilBId: idB, rating: rating as PairingRating, reason },
+                update: { rating: rating as PairingRating, reason },
+              })
+            } catch (err) {
+              console.error(`Pairing upsert failed (${idA} ↔ ${idB}):`, err)
+            }
+          }),
+      )
+    }
+
+    revalidatePath('/admin')
+    revalidatePath('/oils')
+    redirect(`/admin/oils/${oil.id}`)
+  } catch (e: unknown) {
+    if (e instanceof z.ZodError) return { error: e.issues[0]?.message ?? 'Validation error' }
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes('NEXT_REDIRECT')) throw e
+    return { error: msg }
+  }
+}
+
 export async function updateOil(id: string, _prev: unknown, data: FormData) {
   try {
     await prisma.oil.update({ where: { id }, data: parseOilForm(data) })

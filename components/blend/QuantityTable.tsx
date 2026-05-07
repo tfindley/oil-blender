@@ -27,9 +27,9 @@ export function QuantityTable({ ingredients, totalVolumeMl }: QuantityTableProps
                 <span className="ml-1.5 text-xs text-stone-400 dark:text-stone-500">{i.type === 'CARRIER' ? 'carrier' : 'EO'}</span>
               </td>
               <td className="px-4 py-2.5 text-right text-stone-600 dark:text-stone-300">
-                {((i.volumeMl / totalVolumeMl) * 100).toFixed(1)}%
+                {(() => { const pct = Math.round((i.volumeMl / totalVolumeMl) * 100); return pct === 0 ? '<1%' : `${pct}%` })()}
               </td>
-              <td className="px-4 py-2.5 text-right font-mono text-stone-800 dark:text-stone-100">{i.volumeMl.toFixed(2)}</td>
+              <td className="px-4 py-2.5 text-right font-mono text-stone-800 dark:text-stone-100">{i.volumeMl.toFixed(1)}</td>
               <td className="px-4 py-2.5 text-right font-mono text-stone-800 dark:text-stone-100">
                 {i.type === 'ESSENTIAL' ? i.drops : '—'}
               </td>
@@ -42,6 +42,11 @@ export function QuantityTable({ ingredients, totalVolumeMl }: QuantityTableProps
             <td className="px-4 py-2 text-right font-medium text-stone-700 dark:text-stone-200">100%</td>
             <td className="px-4 py-2 text-right font-mono font-medium text-stone-700 dark:text-stone-200">{totalVolumeMl.toFixed(0)}</td>
             <td className="px-4 py-2 text-right text-stone-400 dark:text-stone-500">—</td>
+          </tr>
+          <tr>
+            <td colSpan={4} className="px-4 py-1.5 text-[11px] text-stone-400 dark:text-stone-500">
+              1 ml ≈ 20 drops of essential oil
+            </td>
           </tr>
         </tfoot>
       </table>
