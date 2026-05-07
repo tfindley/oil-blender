@@ -61,6 +61,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const [eoSearch, setEoSearch] = useState('')
   const [eoMode, setEoMode] = useState<'search' | 'browse'>('search')
   const [eoInputMode, setEoInputMode] = useState<'pct' | 'drops'>('pct')
+  const [expandedInfoId, setExpandedInfoId] = useState<string | null>(null)
   const [avoidAcknowledged, setAvoidAcknowledged] = useState(false)
 
   const allSelectedIds = [carrier?.id, ...selectedEOs.map((e) => e.oil.id)].filter(Boolean) as string[]
@@ -94,6 +95,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     setEoSearch('')
     setEoMode('search')
     setEoInputMode('pct')
+    setExpandedInfoId(null)
   }
 
   const ingredientInputs = [
@@ -248,21 +250,62 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
           </CardHeader>
           <CardBody>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {carriers.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => { setCarrier(carrier?.id === c.id ? null : c); setAvoidAcknowledged(false) }}
-                  title={c.description}
-                  className={`rounded-lg border p-3 text-left text-sm transition-all ${
-                    carrier?.id === c.id
-                      ? 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-500'
-                      : 'border-stone-200 bg-white text-stone-700 hover:border-amber-300 hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-200 dark:hover:border-amber-500 dark:hover:bg-amber-950/30'
-                  }`}
-                >
-                  <p className="font-medium">{c.name}</p>
-                  <p className="mt-0.5 text-xs text-stone-500 line-clamp-1 dark:text-stone-400">{c.aroma}</p>
-                </button>
-              ))}
+              {carriers.map((c) => {
+                const isSelected = carrier?.id === c.id
+                const isExpanded = expandedInfoId === c.id
+                return (
+                  <div
+                    key={c.id}
+                    className={`rounded-lg border text-sm transition-all ${
+                      isSelected
+                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-950 dark:border-amber-500'
+                        : 'border-stone-200 bg-white dark:border-stone-600 dark:bg-stone-700'
+                    }`}
+                  >
+                    <div className="relative">
+                      <button
+                        onClick={() => { setCarrier(isSelected ? null : c); setAvoidAcknowledged(false) }}
+                        className={`w-full p-3 text-left transition-colors ${
+                          isSelected
+                            ? 'text-amber-900 dark:text-amber-200'
+                            : 'text-stone-700 hover:bg-amber-50/40 dark:text-stone-200 dark:hover:bg-amber-950/30'
+                        } rounded-lg`}
+                      >
+                        <p className="pr-5 font-medium">{c.name}</p>
+                        <p className="mt-0.5 text-xs text-stone-500 line-clamp-1 dark:text-stone-400">{c.aroma}</p>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setExpandedInfoId(isExpanded ? null : c.id) }}
+                        aria-label={`Info about ${c.name}`}
+                        className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] transition-colors ${
+                          isExpanded
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
+                            : 'text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:text-stone-500 dark:hover:bg-stone-600 dark:hover:text-stone-300'
+                        }`}
+                      >
+                        ⓘ
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="border-t border-stone-100 px-3 pb-3 pt-2 dark:border-stone-600">
+                        {c.description && (
+                          <p className="mb-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">{c.description}</p>
+                        )}
+                        <ul className="space-y-0.5">
+                          {c.benefits.slice(0, 4).map((b, i) => (
+                            <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
+                          ))}
+                        </ul>
+                        {c.consistency && (
+                          <p className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
+                            {c.consistency} consistency · {c.absorbency} absorption
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </CardBody>
         </Card>
@@ -369,32 +412,75 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {filteredEOs.map((eo) => {
                     const unsafe = isUnsafeWithCurrent(eo)
+                    const isExpanded = expandedInfoId === eo.id
                     return (
-                      <button
+                      <div
                         key={eo.id}
-                        onClick={() => !unsafe && addEO(eo)}
-                        disabled={!!unsafe}
-                        title={unsafe ? `Cannot add: ${unsafe.reason}` : undefined}
-                        className={`rounded-lg border p-3 text-left transition-all ${
+                        className={`rounded-lg border transition-all ${
                           unsafe
-                            ? 'cursor-not-allowed border-red-100 bg-red-50/50 opacity-60 dark:border-red-900 dark:bg-red-950/20'
-                            : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:border-amber-500 dark:hover:bg-amber-950/30'
+                            ? 'border-red-100 bg-red-50/50 opacity-60 dark:border-red-900 dark:bg-red-950/20'
+                            : 'border-stone-200 bg-white dark:border-stone-600 dark:bg-stone-700'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-stone-800 dark:text-stone-100">{eo.name}</p>
-                            <p className="text-xs italic text-stone-400 dark:text-stone-500">{eo.botanicalName}</p>
-                          </div>
-                          {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
+                        <div className="relative">
+                          <button
+                            onClick={() => !unsafe && addEO(eo)}
+                            disabled={!!unsafe}
+                            title={unsafe ? `Cannot add: ${unsafe.reason}` : undefined}
+                            className={`w-full rounded-lg p-3 text-left transition-colors ${
+                              unsafe
+                                ? 'cursor-not-allowed'
+                                : 'hover:bg-amber-50/40 dark:hover:bg-amber-950/30'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 pr-5">
+                                <p className="text-sm font-medium text-stone-800 dark:text-stone-100">{eo.name}</p>
+                                <p className="text-xs italic text-stone-400 dark:text-stone-500">{eo.botanicalName}</p>
+                              </div>
+                              {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
+                            </div>
+                            <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{eo.aroma}</p>
+                            <ul className="mt-1.5 space-y-0.5">
+                              {eo.benefits.slice(0, 2).map((b, i) => (
+                                <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
+                              ))}
+                            </ul>
+                          </button>
+                          {!unsafe && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedInfoId(isExpanded ? null : eo.id) }}
+                              aria-label={`Info about ${eo.name}`}
+                              className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] transition-colors ${
+                                isExpanded
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
+                                  : 'text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:text-stone-500 dark:hover:bg-stone-600 dark:hover:text-stone-300'
+                              }`}
+                            >
+                              ⓘ
+                            </button>
+                          )}
                         </div>
-                        <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{eo.aroma}</p>
-                        <ul className="mt-1.5 space-y-0.5">
-                          {eo.benefits.slice(0, 2).map((b, i) => (
-                            <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
-                          ))}
-                        </ul>
-                      </button>
+                        {isExpanded && (
+                          <div className="border-t border-stone-100 px-3 pb-3 pt-2 dark:border-stone-600">
+                            {eo.description && (
+                              <p className="mb-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">{eo.description}</p>
+                            )}
+                            {eo.benefits.length > 2 && (
+                              <ul className="space-y-0.5">
+                                {eo.benefits.slice(2).map((b, i) => (
+                                  <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
+                                ))}
+                              </ul>
+                            )}
+                            {eo.dilutionRateMax != null && (
+                              <p className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
+                                Max dilution {(eo.dilutionRateMax * 100).toFixed(0)}%
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                   {filteredEOs.length === 0 && (

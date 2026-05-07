@@ -27,12 +27,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             {oils.length} oil{oils.length === 1 ? '' : 's'}{q ? ` matching "${q}"` : ' in the library'}
           </p>
         </div>
-        <Link
-          href="/admin/oils/new"
-          className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800"
-        >
-          + Add Oil
-        </Link>
+        <div className="flex gap-2">
+          {process.env.ANTHROPIC_API_KEY && (
+            <Link
+              href="/admin/oils/new"
+              className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800"
+            >
+              + Add with AI
+            </Link>
+          )}
+          <Link
+            href="/admin/oils/new/manual"
+            className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+          >
+            + Add Manually
+          </Link>
+        </div>
       </div>
 
       {/* Search */}
