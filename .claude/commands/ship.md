@@ -1,4 +1,4 @@
-Ship the current branch: commit any uncommitted changes, apply the next patch-version tag, and push both to origin to trigger the GitHub Actions release build.
+Ship the current branch: commit any uncommitted changes, apply the next patch-version tag, push to origin, then watch the GitHub Actions release build.
 
 ## Steps
 
@@ -9,19 +9,30 @@ Ship the current branch: commit any uncommitted changes, apply the next patch-ve
    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
    ```
 
-3. **Determine version**: if `$ARGUMENTS` contains a version string (e.g. `v0.2.0`), use it. Otherwise run `git tag --sort=-version:refname | head -1` to find the latest tag and increment the patch number (e.g. `v0.1.5` → `v0.1.6`).
+3. **Determine version**: if `$ARGUMENTS` contains a version string (e.g. `v0.2.0`), use it. Otherwise run:
+   ```
+   gh release list --limit 1 --json tagName --jq '.[0].tagName'
+   ```
+   to find the latest release tag and increment the patch number (e.g. `v0.1.6` → `v0.1.7`).
 
 4. **Tag**: `git tag -a <version> -m "Release <version>"`
 
-5. **Push branch**: `git push origin main`
+5. **Push branch and tag**:
+   ```
+   git push origin main --follow-tags
+   ```
+   This pushes both the branch and the new tag in one step. The tag push triggers the GitHub Actions workflow (`.github/workflows/release.yml`).
 
-6. **Push tag**: `git push origin <version>` — this triggers the GitHub Actions workflow (`.github/workflows/release.yml`) which builds the Docker image, pushes `ghcr.io/tfindley/oil-blender:<version>` and `:latest` to GHCR, and creates a GitHub Release.
-
-7. **Report**: confirm the tag that was pushed and note that the build can be watched at the Actions tab on GitHub (`https://github.com/tfindley/oil-blender/actions`).
+6. **Watch the pipeline**: get the triggered run ID and watch it:
+   ```
+   gh run watch $(gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+   ```
+   This streams live output until the build completes. Report whether it succeeded or failed.
 
 ## Notes
 
 - Do not skip the commit step if there are uncommitted changes — shipping a dirty tree is never the intent.
 - Do not force-push or amend existing tags.
 - If the working tree is already clean and HEAD is already tagged, say so and do nothing.
-- The release workflow creates the GitHub Release automatically from the tag — do not create one manually.
+- The release workflow creates the GitHub Release automatically from the tag — do not use `gh release create` manually.
+- `--follow-tags` only pushes annotated tags reachable from the pushed commits, so it is safe to use.
