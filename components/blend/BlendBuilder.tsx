@@ -61,7 +61,9 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const [eoSearch, setEoSearch] = useState('')
   const [eoMode, setEoMode] = useState<'search' | 'browse'>('search')
   const [eoInputMode, setEoInputMode] = useState<'pct' | 'drops'>('pct')
-  const [expandedInfoId, setExpandedInfoId] = useState<string | null>(null)
+  const [carrierSearch, setCarrierSearch] = useState('')
+  const [carrierMode, setCarrierMode] = useState<'search' | 'browse'>('search')
+  const [openSection, setOpenSection] = useState<1 | 2>(initialBlend?.carrier ? 2 : 1)
   const [avoidAcknowledged, setAvoidAcknowledged] = useState(false)
 
   const allSelectedIds = [carrier?.id, ...selectedEOs.map((e) => e.oil.id)].filter(Boolean) as string[]
@@ -95,7 +97,9 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     setEoSearch('')
     setEoMode('search')
     setEoInputMode('pct')
-    setExpandedInfoId(null)
+    setCarrierSearch('')
+    setCarrierMode('search')
+    setOpenSection(1)
   }
 
   const ingredientInputs = [
@@ -185,6 +189,13 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     )
   }
 
+  const filteredCarriers = carriers.filter(
+    (c) =>
+      !carrierSearch ||
+      c.name.toLowerCase().includes(carrierSearch.toLowerCase()) ||
+      (c.botanicalName ?? '').toLowerCase().includes(carrierSearch.toLowerCase())
+  )
+
   const availableEOs = essentials.filter((e) => !selectedEOs.some((s) => s.oil.id === e.id))
   const filteredEOs = availableEOs.filter(
     (e) =>
@@ -245,108 +256,174 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
         {/* Step 1: Carrier */}
         <Card>
           <CardHeader>
-            <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">1. Choose Your Carrier Oil</h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400">The base that delivers the blend to your skin.</p>
+            <div
+              className="flex cursor-pointer items-center justify-between"
+              onClick={() => setOpenSection(1)}
+            >
+              <div>
+                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">1. Choose Your Carrier Oil</h2>
+                <p className="text-sm text-stone-500 dark:text-stone-400">
+                  {openSection === 1 ? 'The base that delivers the blend to your skin.' : (carrier?.name ?? 'None selected')}
+                </p>
+              </div>
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                {openSection === 1 && (
+                  <div className="flex rounded-md border border-stone-200 text-xs dark:border-stone-600">
+                    <button
+                      onClick={() => setCarrierMode('search')}
+                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
+                        carrierMode === 'search'
+                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
+                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
+                      }`}
+                    >
+                      Search
+                    </button>
+                    <button
+                      onClick={() => setCarrierMode('browse')}
+                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
+                        carrierMode === 'browse'
+                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
+                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
+                      }`}
+                    >
+                      Browse
+                    </button>
+                  </div>
+                )}
+                <span className="text-stone-400 dark:text-stone-500">{openSection === 1 ? '▲' : '▼'}</span>
+              </div>
+            </div>
           </CardHeader>
-          <CardBody>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {carriers.map((c) => {
-                const isSelected = carrier?.id === c.id
-                const isExpanded = expandedInfoId === c.id
-                return (
-                  <div
-                    key={c.id}
-                    className={`rounded-lg border text-sm transition-all ${
-                      isSelected
-                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-950 dark:border-amber-500'
-                        : 'border-stone-200 bg-white dark:border-stone-600 dark:bg-stone-700'
-                    }`}
-                  >
-                    <div className="relative">
-                      <button
-                        onClick={() => { setCarrier(isSelected ? null : c); setAvoidAcknowledged(false) }}
-                        className={`w-full p-3 text-left transition-colors ${
-                          isSelected
-                            ? 'text-amber-900 dark:text-amber-200'
-                            : 'text-stone-700 hover:bg-amber-50/40 dark:text-stone-200 dark:hover:bg-amber-950/30'
-                        } rounded-lg`}
-                      >
-                        <p className="pr-5 font-medium">{c.name}</p>
-                        <p className="mt-0.5 text-xs text-stone-500 line-clamp-1 dark:text-stone-400">{c.aroma}</p>
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setExpandedInfoId(isExpanded ? null : c.id) }}
-                        aria-label={`Info about ${c.name}`}
-                        className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] transition-colors ${
-                          isExpanded
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
-                            : 'text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:text-stone-500 dark:hover:bg-stone-600 dark:hover:text-stone-300'
-                        }`}
-                      >
-                        ⓘ
-                      </button>
+          {openSection === 1 && (
+            <CardBody>
+              {/* Search mode */}
+              {carrierMode === 'search' && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search by name or botanical name…"
+                    value={carrierSearch}
+                    onChange={(e) => setCarrierSearch(e.target.value)}
+                    className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
+                  />
+                  {carrierSearch && (
+                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800">
+                      {filteredCarriers.slice(0, 8).map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => { setCarrier(c); setCarrierSearch(''); setOpenSection(2); setAvoidAcknowledged(false) }}
+                          className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-stone-800 transition-colors hover:bg-amber-50 dark:text-stone-200 dark:hover:bg-amber-950/30"
+                        >
+                          <div>
+                            <span className="font-medium">{c.name}</span>
+                            <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</span>
+                          </div>
+                          <span className="text-xs text-stone-400 dark:text-stone-500">{c.aroma}</span>
+                        </button>
+                      ))}
+                      {filteredCarriers.length === 0 && (
+                        <p className="px-3 py-2.5 text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
+                      )}
                     </div>
-                    {isExpanded && (
-                      <div className="border-t border-stone-100 px-3 pb-3 pt-2 dark:border-stone-600">
-                        {c.description && (
-                          <p className="mb-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">{c.description}</p>
-                        )}
-                        <ul className="space-y-0.5">
-                          {c.benefits.slice(0, 4).map((b, i) => (
-                            <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
-                          ))}
-                        </ul>
-                        {c.consistency && (
-                          <p className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
-                            {c.consistency} consistency · {c.absorbency} absorption
-                          </p>
-                        )}
-                      </div>
+                  )}
+                </div>
+              )}
+
+              {/* Browse mode */}
+              {carrierMode === 'browse' && (
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Filter…"
+                    value={carrierSearch}
+                    onChange={(e) => setCarrierSearch(e.target.value)}
+                    className="mb-3 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
+                  />
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {filteredCarriers.map((c) => {
+                      const isSelected = carrier?.id === c.id
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            const next = isSelected ? null : c
+                            setCarrier(next)
+                            setAvoidAcknowledged(false)
+                            if (next) setOpenSection(2)
+                          }}
+                          className={`rounded-lg border p-3 text-left text-sm transition-colors ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-50 dark:border-amber-500 dark:bg-amber-950'
+                              : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
+                          }`}
+                        >
+                          <p className="font-medium text-stone-800 dark:text-stone-100">{c.name}</p>
+                          <p className="text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</p>
+                          <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{c.aroma}</p>
+                          <ul className="mt-1.5 space-y-0.5">
+                            {c.benefits.slice(0, 2).map((b, i) => (
+                              <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
+                            ))}
+                          </ul>
+                        </button>
+                      )
+                    })}
+                    {filteredCarriers.length === 0 && (
+                      <p className="col-span-3 py-4 text-center text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
                     )}
                   </div>
-                )
-              })}
-            </div>
-          </CardBody>
+                </div>
+              )}
+            </CardBody>
+          )}
         </Card>
 
         {/* Step 2: Essential Oil picker */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div
+              className="flex cursor-pointer items-center justify-between"
+              onClick={() => setOpenSection(2)}
+            >
               <div>
                 <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">2. Add Essential Oils</h2>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {selectedEOs.length < 5 ? 'Select up to 5 essential oils.' : 'Maximum 5 oils reached.'}
+                  {openSection === 2
+                    ? (selectedEOs.length < 5 ? 'Select up to 5 essential oils.' : 'Maximum 5 oils reached.')
+                    : (selectedEOs.length > 0 ? `${selectedEOs.length} oil${selectedEOs.length === 1 ? '' : 's'} selected` : 'None selected')}
                 </p>
               </div>
-              {selectedEOs.length < 5 && (
-                <div className="flex rounded-md border border-stone-200 text-xs dark:border-stone-600">
-                  <button
-                    onClick={() => setEoMode('search')}
-                    className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
-                      eoMode === 'search'
-                        ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                        : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
-                    }`}
-                  >
-                    Search
-                  </button>
-                  <button
-                    onClick={() => setEoMode('browse')}
-                    className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
-                      eoMode === 'browse'
-                        ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                        : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
-                    }`}
-                  >
-                    Browse
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                {openSection === 2 && selectedEOs.length < 5 && (
+                  <div className="flex rounded-md border border-stone-200 text-xs dark:border-stone-600">
+                    <button
+                      onClick={() => setEoMode('search')}
+                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
+                        eoMode === 'search'
+                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
+                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
+                      }`}
+                    >
+                      Search
+                    </button>
+                    <button
+                      onClick={() => setEoMode('browse')}
+                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
+                        eoMode === 'browse'
+                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
+                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
+                      }`}
+                    >
+                      Browse
+                    </button>
+                  </div>
+                )}
+                <span className="text-stone-400 dark:text-stone-500">{openSection === 2 ? '▲' : '▼'}</span>
+              </div>
             </div>
           </CardHeader>
-          <CardBody className="space-y-3">
+          {openSection === 2 && <CardBody className="space-y-3">
             {selectedEOs.length >= 5 && (
               <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500 dark:bg-stone-700 dark:text-stone-400">
                 You have 5 essential oils — remove one from your blend to add another.
@@ -412,75 +489,32 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {filteredEOs.map((eo) => {
                     const unsafe = isUnsafeWithCurrent(eo)
-                    const isExpanded = expandedInfoId === eo.id
                     return (
-                      <div
+                      <button
                         key={eo.id}
-                        className={`rounded-lg border transition-all ${
+                        onClick={() => !unsafe && addEO(eo)}
+                        disabled={!!unsafe}
+                        title={unsafe ? `Cannot add: ${unsafe.reason}` : undefined}
+                        className={`rounded-lg border p-3 text-left text-sm transition-colors ${
                           unsafe
-                            ? 'border-red-100 bg-red-50/50 opacity-60 dark:border-red-900 dark:bg-red-950/20'
-                            : 'border-stone-200 bg-white dark:border-stone-600 dark:bg-stone-700'
+                            ? 'cursor-not-allowed border-red-100 bg-red-50/50 opacity-60 dark:border-red-900 dark:bg-red-950/20'
+                            : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
                         }`}
                       >
-                        <div className="relative">
-                          <button
-                            onClick={() => !unsafe && addEO(eo)}
-                            disabled={!!unsafe}
-                            title={unsafe ? `Cannot add: ${unsafe.reason}` : undefined}
-                            className={`w-full rounded-lg p-3 text-left transition-colors ${
-                              unsafe
-                                ? 'cursor-not-allowed'
-                                : 'hover:bg-amber-50/40 dark:hover:bg-amber-950/30'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 pr-5">
-                                <p className="text-sm font-medium text-stone-800 dark:text-stone-100">{eo.name}</p>
-                                <p className="text-xs italic text-stone-400 dark:text-stone-500">{eo.botanicalName}</p>
-                              </div>
-                              {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
-                            </div>
-                            <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{eo.aroma}</p>
-                            <ul className="mt-1.5 space-y-0.5">
-                              {eo.benefits.slice(0, 2).map((b, i) => (
-                                <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
-                              ))}
-                            </ul>
-                          </button>
-                          {!unsafe && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setExpandedInfoId(isExpanded ? null : eo.id) }}
-                              aria-label={`Info about ${eo.name}`}
-                              className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] transition-colors ${
-                                isExpanded
-                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
-                                  : 'text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:text-stone-500 dark:hover:bg-stone-600 dark:hover:text-stone-300'
-                              }`}
-                            >
-                              ⓘ
-                            </button>
-                          )}
-                        </div>
-                        {isExpanded && (
-                          <div className="border-t border-stone-100 px-3 pb-3 pt-2 dark:border-stone-600">
-                            {eo.description && (
-                              <p className="mb-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">{eo.description}</p>
-                            )}
-                            {eo.benefits.length > 2 && (
-                              <ul className="space-y-0.5">
-                                {eo.benefits.slice(2).map((b, i) => (
-                                  <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
-                                ))}
-                              </ul>
-                            )}
-                            {eo.dilutionRateMax != null && (
-                              <p className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
-                                Max dilution {(eo.dilutionRateMax * 100).toFixed(0)}%
-                              </p>
-                            )}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-medium text-stone-800 dark:text-stone-100">{eo.name}</p>
+                            <p className="text-xs italic text-stone-400 dark:text-stone-500">{eo.botanicalName}</p>
                           </div>
-                        )}
-                      </div>
+                          {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
+                        </div>
+                        <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{eo.aroma}</p>
+                        <ul className="mt-1.5 space-y-0.5">
+                          {eo.benefits.slice(0, 2).map((b, i) => (
+                            <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
+                          ))}
+                        </ul>
+                      </button>
                     )
                   })}
                   {filteredEOs.length === 0 && (
@@ -489,7 +523,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 </div>
               </div>
             )}
-          </CardBody>
+          </CardBody>}
         </Card>
 
         {/* Quantities — full-width so table columns have room */}
@@ -540,7 +574,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   </div>
                   <button
                     onClick={() => { setCarrier(null); setAvoidAcknowledged(false) }}
-                    className="ml-2 text-amber-400 hover:text-red-500 dark:text-amber-600 dark:hover:text-red-400"
+                    className="-mr-1 ml-2 rounded-full p-1.5 text-amber-400 hover:bg-red-50 hover:text-red-500 dark:text-amber-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
                     aria-label="Remove carrier"
                   >
                     ✕
@@ -560,9 +594,17 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 {selectedEOs.length > 0 && (
                   <button
                     onClick={() => setEoInputMode((m) => m === 'pct' ? 'drops' : 'pct')}
-                    className="text-[10px] text-stone-400 hover:text-amber-700 dark:text-stone-500 dark:hover:text-amber-400"
+                    className="relative flex h-8 w-28 shrink-0 items-center rounded-full bg-stone-100 p-0.5 text-xs font-medium dark:bg-stone-700"
+                    aria-label={`Switch to ${eoInputMode === 'pct' ? 'drops' : 'percentage'} input`}
                   >
-                    {eoInputMode === 'pct' ? 'enter by drops' : 'enter by %'}
+                    <span
+                      aria-hidden
+                      className={`absolute inset-y-0.5 rounded-full bg-amber-700 transition-all duration-200 ${
+                        eoInputMode === 'pct' ? 'left-0.5 right-[50%]' : 'left-[50%] right-0.5'
+                      }`}
+                    />
+                    <span className={`relative z-10 flex-1 text-center transition-colors ${eoInputMode === 'pct' ? 'text-white' : 'text-stone-500 dark:text-stone-400'}`}>%</span>
+                    <span className={`relative z-10 flex-1 text-center transition-colors ${eoInputMode === 'drops' ? 'text-white' : 'text-stone-500 dark:text-stone-400'}`}>drops</span>
                   </button>
                 )}
               </div>
@@ -587,7 +629,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                               step={0.1}
                               value={e.percentagePct.toFixed(1)}
                               onChange={(ev) => updatePct(e.oil.id, parseFloat(ev.target.value) || 0)}
-                              className="w-14 rounded border border-stone-300 bg-white px-1.5 py-0.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
+                              className="w-14 rounded border border-stone-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
                             />
                             <span className="text-xs text-stone-400 dark:text-stone-500">%</span>
                           </>
@@ -600,14 +642,14 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                               step={1}
                               value={dropCount}
                               onChange={(ev) => updateDrops(e.oil.id, parseInt(ev.target.value, 10) || 1)}
-                              className="w-14 rounded border border-stone-300 bg-white px-1.5 py-0.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
+                              className="w-14 rounded border border-stone-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
                             />
                             <span className="text-xs text-stone-400 dark:text-stone-500">drops</span>
                           </>
                         )}
                         <button
                           onClick={() => removeEO(e.oil.id)}
-                          className="text-stone-300 hover:text-red-500 dark:text-stone-500 dark:hover:text-red-400"
+                          className="-mr-1 rounded-full p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 dark:text-stone-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
                           aria-label={`Remove ${e.oil.name}`}
                         >
                           ✕
@@ -620,7 +662,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
               {eoInputMode === 'pct' && selectedEOs.length > 0 && Math.abs(selectedEOs.reduce((s, e) => s + e.percentagePct, 0) - dilutionRate * 100) > 0.1 && (
                 <button
                   onClick={normalizePercentages}
-                  className="mt-1.5 text-xs text-amber-700 hover:underline dark:text-amber-500"
+                  className="mt-1 inline-block py-1 text-xs text-amber-700 hover:underline dark:text-amber-500"
                 >
                   Percentages don't sum to {(dilutionRate * 100).toFixed(1)}% — normalize
                 </button>
@@ -640,7 +682,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   <button
                     key={v}
                     onClick={() => { setTotalVolumeMl(v); setCustomVolume('') }}
-                    className={`rounded border px-2.5 py-1 text-xs transition-all ${
+                    className={`rounded border px-3 py-2 text-sm transition-all ${
                       totalVolumeMl === v && !customVolume
                         ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
                         : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
@@ -660,7 +702,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                     const v = parseInt(e.target.value)
                     if (v >= 5) setTotalVolumeMl(v)
                   }}
-                  className="w-20 rounded border border-stone-200 bg-white px-2 py-1 text-xs focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
+                  className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
                 />
               </div>
             </div>
@@ -673,7 +715,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   <button
                     key={d.value}
                     onClick={() => setDilutionRate(d.value)}
-                    className={`rounded border px-2.5 py-1 text-left text-xs transition-all ${
+                    className={`rounded border px-3 py-2 text-left text-xs transition-all ${
                       dilutionRate === d.value
                         ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
                         : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
