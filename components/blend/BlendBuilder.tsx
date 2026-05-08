@@ -139,6 +139,8 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const carrierSum = selectedCarriers.reduce((s, c) => s + c.volumeMl, 0)
   const carrierDrift = carrierSum - totalVolumeMl
 
+  const calcByOilId = new Map(calc.ingredients.map((i) => [i.oilId, i]))
+
   function addCarrier(oil: OilSummary) {
     if (selectedCarriers.some((c) => c.oil.id === oil.id)) return
     if (selectedCarriers.length >= MAX_CARRIERS) return
@@ -325,31 +327,11 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
           onSearchChange={setEoSearch}
         />
 
-        {/* Quantities — full-width so table columns have room */}
-        {calc.ingredients.length > 0 && (
-          <Card>
-            <CardHeader>
-              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Quantities</h2>
-            </CardHeader>
-            <CardBody className="p-0">
-              <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
-            </CardBody>
-          </Card>
-        )}
-
-        {calc.warnings.map((w, i) => (
-          <Alert key={i} variant="caution">{w}</Alert>
-        ))}
-      </div>
-
-      {/* ── Right column: live blend summary ── */}
-      <div className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:pr-0.5">
-
-        {/* Blend composition */}
+        {/* Merged Quantities card — Volume / Dilution / per-oil dilution alerts / editable lists / read-only summary */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Your Blend</h2>
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Quantities</h2>
               {(selectedCarriers.length > 0 || selectedEOs.length > 0) && (
                 <button
                   onClick={handleReset}
@@ -362,8 +344,75 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
           </CardHeader>
           <CardBody className="space-y-4">
 
-            {/* Carriers */}
+            {/* Volume */}
             <div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Volume</p>
+              <div className="flex flex-wrap gap-1.5">
+                {VOLUME_PRESETS.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => { changeVolume(v); setCustomVolume('') }}
+                    className={`rounded border px-3 py-2 text-sm transition-all ${
+                      totalVolumeMl === v && !customVolume
+                        ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
+                    }`}
+                  >
+                    {v} ml
+                  </button>
+                ))}
+                <input
+                  type="number"
+                  placeholder="Custom"
+                  value={customVolume}
+                  min={5}
+                  max={500}
+                  onChange={(e) => {
+                    setCustomVolume(e.target.value)
+                    const v = parseInt(e.target.value)
+                    if (v >= 5) changeVolume(v)
+                  }}
+                  className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
+                />
+              </div>
+            </div>
+
+            {/* Dilution */}
+            <div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Dilution</p>
+              <div className="flex flex-wrap gap-1.5">
+                {DILUTION_PRESETS.map((d) => (
+                  <button
+                    key={d.value}
+                    onClick={() => setDilutionRate(d.value)}
+                    className={`rounded border px-3 py-2 text-left text-xs transition-all ${
+                      dilutionRate === d.value
+                        ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
+                    }`}
+                  >
+                    <span className="font-medium">{d.label}</span>
+                    <span className="ml-1 text-stone-400 dark:text-stone-500">{d.sublabel}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
+                Final mix: {calc.finalVolumeMl.toFixed(1)} ml
+                ({calc.carrierVolumeMl.toFixed(1)} ml carrier + {calc.essentialOilTotalMl.toFixed(1)} ml essentials)
+              </p>
+            </div>
+
+            {/* Per-oil dilution warnings (also shown in Compatibility card) */}
+            {calc.warnings.length > 0 && (
+              <div className="space-y-2">
+                {calc.warnings.map((w, i) => (
+                  <Alert key={i} variant="caution">{w}</Alert>
+                ))}
+              </div>
+            )}
+
+            {/* Carriers */}
+            <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
                 Carrier Oils {selectedCarriers.length > 0 && `(${selectedCarriers.length}/${MAX_CARRIERS})`}
               </p>
@@ -418,6 +467,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                       onChange={(v) => updateDrops(e.oil.id, v)}
                       onRemove={() => removeEO(e.oil.id)}
                       removeAriaLabel={`Remove ${e.oil.name}`}
+                      over={calcByOilId.get(e.oil.id)?.overMaxDilution ?? false}
                     />
                   ))}
                 </div>
@@ -429,75 +479,27 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
               )}
             </div>
 
-            {/* Volume */}
-            <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Volume</p>
-              <div className="flex flex-wrap gap-1.5">
-                {VOLUME_PRESETS.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => { changeVolume(v); setCustomVolume('') }}
-                    className={`rounded border px-3 py-2 text-sm transition-all ${
-                      totalVolumeMl === v && !customVolume
-                        ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
-                    }`}
-                  >
-                    {v} ml
-                  </button>
-                ))}
-                <input
-                  type="number"
-                  placeholder="Custom"
-                  value={customVolume}
-                  min={5}
-                  max={500}
-                  onChange={(e) => {
-                    setCustomVolume(e.target.value)
-                    const v = parseInt(e.target.value)
-                    if (v >= 5) changeVolume(v)
-                  }}
-                  className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
-                />
+            {/* Read-only summary table */}
+            {calc.ingredients.length > 0 && (
+              <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
+                <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
               </div>
-              <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
-                Final mix: {calc.finalVolumeMl.toFixed(1)} ml
-                ({calc.carrierVolumeMl.toFixed(1)} ml carrier + {calc.essentialOilTotalMl.toFixed(1)} ml essentials)
-              </p>
-            </div>
-
-            {/* Dilution */}
-            <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Dilution</p>
-              <div className="flex flex-wrap gap-1.5">
-                {DILUTION_PRESETS.map((d) => (
-                  <button
-                    key={d.value}
-                    onClick={() => setDilutionRate(d.value)}
-                    className={`rounded border px-3 py-2 text-left text-xs transition-all ${
-                      dilutionRate === d.value
-                        ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
-                    }`}
-                  >
-                    <span className="font-medium">{d.label}</span>
-                    <span className="ml-1 text-stone-400 dark:text-stone-500">{d.sublabel}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
           </CardBody>
         </Card>
+      </div>
 
-        {/* Compatibility + save */}
+      {/* ── Right column: compatibility + save ── */}
+      <div className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:pr-0.5">
+
+        {/* Compatibility */}
         <Card>
           <CardHeader>
             <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Compatibility</h2>
           </CardHeader>
-          <CardBody className="space-y-5">
-            {hasBlend && <CompatibilityPanel grade={score.grade} summary={score.summary} pairings={pairings} />}
-
+          <CardBody className="space-y-4">
+            {/* Hard stops + warnings at the top so users see the blockers first */}
             {unsafePairings.length > 0 && (
               <Alert variant="unsafe" title="Unsafe combination">
                 This blend cannot be saved. Remove the conflicting oils.
@@ -516,36 +518,48 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
               </Alert>
             )}
 
-            <div className="space-y-3 border-t border-stone-100 pt-4 dark:border-stone-700">
-              <Input
-                label="Name your blend"
-                placeholder="e.g. Evening Calm"
-                value={blendName}
-                onChange={(e) => setBlendName(e.target.value)}
-              />
+            {calc.warnings.map((w, i) => (
+              <Alert key={i} variant="caution">{w}</Alert>
+            ))}
 
-              <Textarea
-                label="Notes (optional)"
-                rows={3}
-                placeholder="Intended use, application method, personal notes…"
-                value={blendNotes}
-                onChange={(e) => setBlendNotes(e.target.value)}
-              />
+            {hasBlend && <CompatibilityPanel grade={score.grade} summary={score.summary} pairings={pairings} />}
+          </CardBody>
+        </Card>
 
-              {saveError && <Alert variant="unsafe">{saveError}</Alert>}
+        {/* Save Blend */}
+        <Card>
+          <CardHeader>
+            <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Save Blend</h2>
+          </CardHeader>
+          <CardBody className="space-y-3">
+            <Input
+              label="Name your blend"
+              placeholder="e.g. Evening Calm"
+              value={blendName}
+              onChange={(e) => setBlendName(e.target.value)}
+            />
 
-              <Button
-                className="w-full"
-                onClick={handleSave}
-                disabled={!canSave || saving}
-              >
-                {saving ? 'Saving…' : 'Save & Get Recipe Card'}
-              </Button>
+            <Textarea
+              label="Notes (optional)"
+              rows={3}
+              placeholder="Intended use, application method, personal notes…"
+              value={blendNotes}
+              onChange={(e) => setBlendNotes(e.target.value)}
+            />
 
-              {selectedCarriers.length === 0 && (
-                <p className="text-center text-xs text-stone-400 dark:text-stone-500">Choose at least one carrier oil to get started.</p>
-              )}
-            </div>
+            {saveError && <Alert variant="unsafe">{saveError}</Alert>}
+
+            <Button
+              className="w-full"
+              onClick={handleSave}
+              disabled={!canSave || saving}
+            >
+              {saving ? 'Saving…' : 'Save & Get Recipe Card'}
+            </Button>
+
+            {selectedCarriers.length === 0 && (
+              <p className="text-center text-xs text-stone-400 dark:text-stone-500">Choose at least one carrier oil to get started.</p>
+            )}
           </CardBody>
         </Card>
       </div>

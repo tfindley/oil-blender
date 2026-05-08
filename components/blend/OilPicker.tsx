@@ -146,7 +146,7 @@ export function OilPicker({
                             : blockedByMax
                               ? 'cursor-not-allowed text-stone-400 dark:text-stone-500'
                               : isSelected
-                                ? 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
+                                ? 'bg-stone-50 text-stone-900 dark:bg-stone-700 dark:text-stone-100'
                                 : 'text-stone-800 hover:bg-amber-50 dark:text-stone-200 dark:hover:bg-amber-950/30'
                         }`}
                       >
@@ -198,7 +198,7 @@ export function OilPicker({
                           : blockedByMax
                             ? 'cursor-not-allowed border-stone-200 bg-stone-50 opacity-60 dark:border-stone-700 dark:bg-stone-800'
                             : isSelected
-                              ? 'border-amber-500 bg-amber-50 dark:border-amber-500 dark:bg-amber-950'
+                              ? 'border-amber-500 bg-white shadow-sm dark:border-amber-500 dark:bg-stone-700'
                               : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
                       }`}
                     >

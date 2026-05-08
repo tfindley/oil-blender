@@ -10,6 +10,7 @@ export interface IngredientInput {
 export interface CalculatedIngredient extends IngredientInput {
   volumeMl: number
   drops: number
+  overMaxDilution?: boolean
 }
 
 export interface BlendCalculation {
@@ -62,16 +63,19 @@ export function calculateBlend(
     const fraction = sumPct > 0 ? e.percentagePct / sumPct : 0
     const volumeMl = essentialOilTotalMl * fraction
     const drops = Math.round(volumeMl * DROPS_PER_ML)
-    calculated.push({ ...e, volumeMl, drops })
+    let overMaxDilution = false
 
     if (e.dilutionRateMax != null && e.dilutionRateMax > 0) {
       const effectivePct = volumeMl / totalVolumeMl
       if (effectivePct > e.dilutionRateMax) {
+        overMaxDilution = true
         warnings.push(
           `${e.name} exceeds its recommended max dilution of ${(e.dilutionRateMax * 100).toFixed(1)}% (currently ${(effectivePct * 100).toFixed(1)}%).`
         )
       }
     }
+
+    calculated.push({ ...e, volumeMl, drops, overMaxDilution })
   }
 
   if (essentials.length > 0 && Math.abs(sumPct - dilutionRate * 100) > 0.1) {
