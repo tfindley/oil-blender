@@ -11,6 +11,7 @@ import { Alert } from '@/components/ui/Alert'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { CompatibilityPanel } from './CompatibilityPanel'
 import { QuantityTable } from './QuantityTable'
+import { OilPicker } from './OilPicker'
 
 const VOLUME_PRESETS = [10, 30, 50, 100, 200]
 const DILUTION_PRESETS = [
@@ -19,6 +20,8 @@ const DILUTION_PRESETS = [
   { label: '3%', sublabel: 'therapeutic', value: 0.03 },
   { label: '5%', sublabel: 'targeted', value: 0.05 },
 ]
+const MAX_CARRIERS = 5
+const MAX_EOS = 5
 
 interface SelectedEO {
   oil: OilSummary
@@ -140,6 +143,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
 
   function addCarrier(oil: OilSummary) {
     if (selectedCarriers.some((c) => c.oil.id === oil.id)) return
+    if (selectedCarriers.length >= MAX_CARRIERS) return
     setCarrierSearch('')
     setAvoidAcknowledged(false)
     const next = [...selectedCarriers, { oil, volumeMl: 0 }]
@@ -179,6 +183,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
 
   function addEO(oil: OilSummary) {
     if (selectedEOs.some((e) => e.oil.id === oil.id)) return
+    if (selectedEOs.length >= MAX_EOS) return
     setEoSearch('')
     setAvoidAcknowledged(false)
     if (eoInputMode === 'drops') {
@@ -247,20 +252,25 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     return unsafePartner.get(oil.id)
   }
 
-  const filteredCarriers = carriers.filter(
-    (c) =>
-      !carrierSearch ||
-      c.name.toLowerCase().includes(carrierSearch.toLowerCase()) ||
-      (c.botanicalName ?? '').toLowerCase().includes(carrierSearch.toLowerCase())
-  )
+  const selectedCarrierIdSet = new Set(selectedCarriers.map((c) => c.oil.id))
+  const selectedEOIdSet = new Set(selectedEOs.map((e) => e.oil.id))
 
-  const availableEOs = essentials.filter((e) => !selectedEOs.some((s) => s.oil.id === e.id))
-  const filteredEOs = availableEOs.filter(
-    (e) =>
-      !eoSearch ||
-      e.name.toLowerCase().includes(eoSearch.toLowerCase()) ||
-      (e.botanicalName ?? '').toLowerCase().includes(eoSearch.toLowerCase())
-  )
+  function toggleCarrier(oil: OilSummary) {
+    if (selectedCarrierIdSet.has(oil.id)) removeCarrier(oil.id)
+    else addCarrier(oil)
+  }
+
+  function toggleEO(oil: OilSummary) {
+    if (selectedEOIdSet.has(oil.id)) removeEO(oil.id)
+    else addEO(oil)
+  }
+
+  const eoSubtitle =
+    openSection === 2
+      ? selectedEOs.length === 0 ? 'Select up to 5 essential oils.' : `${selectedEOs.length} of 5 selected.`
+      : selectedEOs.length === 0 ? 'None selected'
+      : selectedEOs.length <= 2 ? selectedEOs.map((e) => e.oil.name).join(' + ')
+      : `${selectedEOs.length} essentials`
 
   const canSave =
     selectedCarriers.length > 0 &&
@@ -312,310 +322,51 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
       <div className="space-y-6 lg:col-span-2">
 
         {/* Step 1: Carrier */}
-        <Card>
-          <CardHeader>
-            <div
-              className="flex cursor-pointer items-center justify-between"
-              onClick={() => setOpenSection(1)}
-            >
-              <div>
-                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">1. Choose Your Carrier Oils</h2>
-                <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {carrierSubtitle}
-                </p>
-              </div>
-              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                {openSection === 1 && (
-                  <div className="flex rounded-md border border-stone-200 text-xs dark:border-stone-600">
-                    <button
-                      onClick={() => setCarrierMode('search')}
-                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
-                        carrierMode === 'search'
-                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
-                      }`}
-                    >
-                      Search
-                    </button>
-                    <button
-                      onClick={() => setCarrierMode('browse')}
-                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
-                        carrierMode === 'browse'
-                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
-                      }`}
-                    >
-                      Browse
-                    </button>
-                  </div>
-                )}
-                <span className="text-stone-400 dark:text-stone-500">{openSection === 1 ? '▲' : '▼'}</span>
-              </div>
+        <OilPicker
+          title="1. Choose Your Carrier Oils"
+          subtitle={carrierSubtitle}
+          oils={carriers}
+          selectedIds={selectedCarrierIdSet}
+          maxCount={MAX_CARRIERS}
+          maxReachedNoun="carriers"
+          findUnsafe={findUnsafePairing}
+          onToggle={toggleCarrier}
+          isOpen={openSection === 1}
+          onOpen={() => setOpenSection(1)}
+          mode={carrierMode}
+          onModeChange={setCarrierMode}
+          searchValue={carrierSearch}
+          onSearchChange={setCarrierSearch}
+          footer={
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setOpenSection(2)}
+                disabled={selectedCarriers.length === 0}
+                className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next →
+              </button>
             </div>
-          </CardHeader>
-          {openSection === 1 && (
-            <CardBody>
-              {/* Search mode */}
-              {carrierMode === 'search' && (
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search by name or botanical name…"
-                    value={carrierSearch}
-                    onChange={(e) => setCarrierSearch(e.target.value)}
-                    className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
-                  />
-                  {carrierSearch && (
-                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800">
-                      {filteredCarriers.slice(0, 8).map((c) => {
-                        const isSelected = selectedCarriers.some((s) => s.oil.id === c.id)
-                        const unsafe = !isSelected ? findUnsafePairing(c) : undefined
-                        return (
-                          <button
-                            key={c.id}
-                            onClick={() => !unsafe && (isSelected ? removeCarrier(c.id) : addCarrier(c))}
-                            disabled={!!unsafe}
-                            title={unsafe ? `Cannot add: ${unsafe.reason}` : c.description}
-                            className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors ${
-                              unsafe
-                                ? 'cursor-not-allowed bg-red-50 text-red-400 dark:bg-red-950/50 dark:text-red-500'
-                                : isSelected
-                                  ? 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
-                                  : 'text-stone-800 hover:bg-amber-50 dark:text-stone-200 dark:hover:bg-amber-950/30'
-                            }`}
-                          >
-                            <div>
-                              <span className="font-medium">{c.name}</span>
-                              <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</span>
-                            </div>
-                            {unsafe ? (
-                              <span className="text-xs text-red-500">🚫 Unsafe</span>
-                            ) : isSelected ? (
-                              <span className="text-xs text-amber-700 dark:text-amber-400">✓ Selected</span>
-                            ) : (
-                              <span className="text-xs text-stone-400 dark:text-stone-500">{c.aroma}</span>
-                            )}
-                          </button>
-                        )
-                      })}
-                      {filteredCarriers.length === 0 && (
-                        <p className="px-3 py-2.5 text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Browse mode */}
-              {carrierMode === 'browse' && (
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Filter…"
-                    value={carrierSearch}
-                    onChange={(e) => setCarrierSearch(e.target.value)}
-                    className="mb-3 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
-                  />
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {filteredCarriers.map((c) => {
-                      const isSelected = selectedCarriers.some((s) => s.oil.id === c.id)
-                      const unsafe = !isSelected ? findUnsafePairing(c) : undefined
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => !unsafe && (isSelected ? removeCarrier(c.id) : addCarrier(c))}
-                          disabled={!!unsafe}
-                          title={unsafe ? `Cannot add: ${unsafe.reason}` : undefined}
-                          className={`rounded-lg border p-3 text-left text-sm transition-colors ${
-                            unsafe
-                              ? 'cursor-not-allowed border-red-100 bg-red-50/50 opacity-60 dark:border-red-900 dark:bg-red-950/20'
-                              : isSelected
-                                ? 'border-amber-500 bg-amber-50 dark:border-amber-500 dark:bg-amber-950'
-                                : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="font-medium text-stone-800 dark:text-stone-100">{c.name}</p>
-                              <p className="text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</p>
-                            </div>
-                            {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
-                          </div>
-                          <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{c.aroma}</p>
-                          <ul className="mt-1.5 space-y-0.5">
-                            {c.benefits.slice(0, 2).map((b, i) => (
-                              <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
-                            ))}
-                          </ul>
-                        </button>
-                      )
-                    })}
-                    {filteredCarriers.length === 0 && (
-                      <p className="col-span-2 py-4 text-center text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => setOpenSection(2)}
-                  disabled={selectedCarriers.length === 0}
-                  className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Next →
-                </button>
-              </div>
-            </CardBody>
-          )}
-        </Card>
+          }
+        />
 
         {/* Step 2: Essential Oil picker */}
-        <Card>
-          <CardHeader>
-            <div
-              className="flex cursor-pointer items-center justify-between"
-              onClick={() => setOpenSection(2)}
-            >
-              <div>
-                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">2. Add Essential Oils</h2>
-                <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {openSection === 2
-                    ? (selectedEOs.length < 5 ? 'Select up to 5 essential oils.' : 'Maximum 5 oils reached.')
-                    : (selectedEOs.length > 0 ? `${selectedEOs.length} oil${selectedEOs.length === 1 ? '' : 's'} selected` : 'None selected')}
-                </p>
-              </div>
-              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                {openSection === 2 && selectedEOs.length < 5 && (
-                  <div className="flex rounded-md border border-stone-200 text-xs dark:border-stone-600">
-                    <button
-                      onClick={() => setEoMode('search')}
-                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
-                        eoMode === 'search'
-                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
-                      }`}
-                    >
-                      Search
-                    </button>
-                    <button
-                      onClick={() => setEoMode('browse')}
-                      className={`px-3 py-1.5 transition-colors first:rounded-l-md last:rounded-r-md ${
-                        eoMode === 'browse'
-                          ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                          : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-700'
-                      }`}
-                    >
-                      Browse
-                    </button>
-                  </div>
-                )}
-                <span className="text-stone-400 dark:text-stone-500">{openSection === 2 ? '▲' : '▼'}</span>
-              </div>
-            </div>
-          </CardHeader>
-          {openSection === 2 && <CardBody className="space-y-3">
-            {selectedEOs.length >= 5 && (
-              <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500 dark:bg-stone-700 dark:text-stone-400">
-                You have 5 essential oils — remove one from your blend to add another.
-              </p>
-            )}
-
-            {/* Search mode */}
-            {selectedEOs.length < 5 && eoMode === 'search' && (
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search by name or botanical name…"
-                  value={eoSearch}
-                  onChange={(e) => setEoSearch(e.target.value)}
-                  className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
-                />
-                {eoSearch && (
-                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800">
-                    {filteredEOs.slice(0, 8).map((eo) => {
-                      const unsafe = findUnsafePairing(eo)
-                      return (
-                        <button
-                          key={eo.id}
-                          onClick={() => !unsafe && addEO(eo)}
-                          disabled={!!unsafe}
-                          title={unsafe ? `Cannot add: ${unsafe.reason}` : eo.description}
-                          className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors ${
-                            unsafe
-                              ? 'cursor-not-allowed bg-red-50 text-red-400 dark:bg-red-950/50 dark:text-red-500'
-                              : 'text-stone-800 hover:bg-amber-50 dark:text-stone-200 dark:hover:bg-amber-950/30'
-                          }`}
-                        >
-                          <div>
-                            <span className="font-medium">{eo.name}</span>
-                            <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{eo.botanicalName}</span>
-                          </div>
-                          {unsafe ? (
-                            <span className="text-xs text-red-500">🚫 Unsafe</span>
-                          ) : (
-                            <span className="text-xs text-stone-400 dark:text-stone-500">{eo.aroma}</span>
-                          )}
-                        </button>
-                      )
-                    })}
-                    {filteredEOs.length === 0 && (
-                      <p className="px-3 py-2.5 text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Browse mode */}
-            {selectedEOs.length < 5 && eoMode === 'browse' && (
-              <div>
-                <input
-                  type="text"
-                  placeholder="Filter…"
-                  value={eoSearch}
-                  onChange={(e) => setEoSearch(e.target.value)}
-                  className="mb-3 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
-                />
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {filteredEOs.map((eo) => {
-                    const unsafe = findUnsafePairing(eo)
-                    return (
-                      <button
-                        key={eo.id}
-                        onClick={() => !unsafe && addEO(eo)}
-                        disabled={!!unsafe}
-                        title={unsafe ? `Cannot add: ${unsafe.reason}` : undefined}
-                        className={`rounded-lg border p-3 text-left text-sm transition-colors ${
-                          unsafe
-                            ? 'cursor-not-allowed border-red-100 bg-red-50/50 opacity-60 dark:border-red-900 dark:bg-red-950/20'
-                            : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-medium text-stone-800 dark:text-stone-100">{eo.name}</p>
-                            <p className="text-xs italic text-stone-400 dark:text-stone-500">{eo.botanicalName}</p>
-                          </div>
-                          {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
-                        </div>
-                        <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{eo.aroma}</p>
-                        <ul className="mt-1.5 space-y-0.5">
-                          {eo.benefits.slice(0, 2).map((b, i) => (
-                            <li key={i} className="text-xs text-stone-500 dark:text-stone-400">• {b}</li>
-                          ))}
-                        </ul>
-                      </button>
-                    )
-                  })}
-                  {filteredEOs.length === 0 && (
-                    <p className="col-span-2 py-4 text-center text-sm text-stone-400 dark:text-stone-500">No oils available.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardBody>}
-        </Card>
+        <OilPicker
+          title="2. Add Essential Oils"
+          subtitle={eoSubtitle}
+          oils={essentials}
+          selectedIds={selectedEOIdSet}
+          maxCount={MAX_EOS}
+          maxReachedNoun="essential oils"
+          findUnsafe={findUnsafePairing}
+          onToggle={toggleEO}
+          isOpen={openSection === 2}
+          onOpen={() => setOpenSection(2)}
+          mode={eoMode}
+          onModeChange={setEoMode}
+          searchValue={eoSearch}
+          onSearchChange={setEoSearch}
+        />
 
         {/* Quantities — full-width so table columns have room */}
         {calc.ingredients.length > 0 && (
