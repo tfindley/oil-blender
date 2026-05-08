@@ -215,6 +215,25 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     setDilutionRate(dilutionFromEOs(newEOs))
   }
 
+  function changeDilution(newRate: number) {
+    if (selectedEOs.length === 0) {
+      setDilutionRate(newRate)
+      return
+    }
+    const oldSum = selectedEOs.reduce((s, e) => s + e.percentagePct, 0)
+    const targetSum = newRate * 100
+    let newEOs: SelectedEO[]
+    if (oldSum > 0) {
+      const scale = targetSum / oldSum
+      newEOs = selectedEOs.map((e) => ({ ...e, percentagePct: e.percentagePct * scale }))
+    } else {
+      const each = targetSum / selectedEOs.length
+      newEOs = selectedEOs.map((e) => ({ ...e, percentagePct: each }))
+    }
+    setSelectedEOs(newEOs)
+    setDilutionRate(newRate)
+  }
+
   const selectedIds = new Set([
     ...selectedCarriers.map((c) => c.oil.id),
     ...selectedEOs.map((e) => e.oil.id),
@@ -287,10 +306,10 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   }
 
   const tabs: TabSpec[] = [
-    { id: 1, shortLabel: '1. Carriers', fullLabel: '1. Choose Your Carrier Oils', badge: selectedCarriers.length || undefined },
-    { id: 2, shortLabel: '2. Essentials', fullLabel: '2. Choose Your Essential Oils', badge: selectedEOs.length || undefined },
-    { id: 3, shortLabel: '3. Quantities', fullLabel: '3. Set Your Quantities' },
-    { id: 4, shortLabel: '4. Save', fullLabel: '4. Save Blend' },
+    { id: 1, shortLabel: 'Carriers', fullLabel: '1. Carrier Oils', badge: selectedCarriers.length || undefined },
+    { id: 2, shortLabel: 'Essentials', fullLabel: '2. Essential Oils', badge: selectedEOs.length || undefined },
+    { id: 3, shortLabel: 'Quantities', fullLabel: '3. Quantities' },
+    { id: 4, shortLabel: 'Save', fullLabel: '4. Save Blend' },
   ]
   const activeTabSpec = tabs.find((t) => t.id === activeTab)!
   const hasAnyOil = selectedCarriers.length > 0 || selectedEOs.length > 0
@@ -301,12 +320,12 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
       {/* ── Left column / full-width on mobile: tabs ── */}
       <div className="lg:col-span-2 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto">
         {/* Tab strip */}
-        <div className="flex items-stretch border-b border-stone-200 dark:border-stone-700">
+        <div className="flex items-stretch border-b border-stone-200 overflow-x-auto dark:border-stone-700">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`relative flex-1 sm:flex-none px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium transition-colors -mb-px border-b-2 ${
+              className={`relative flex-1 whitespace-nowrap px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium transition-colors -mb-px border-b-2 ${
                 activeTab === t.id
                   ? 'border-amber-500 text-amber-700 dark:text-amber-500'
                   : 'border-transparent text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
@@ -322,9 +341,10 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
           {hasAnyOil && (
             <button
               onClick={handleReset}
-              className="ml-auto self-center px-3 py-1.5 text-xs text-stone-500 hover:text-red-600 dark:text-stone-400 dark:hover:text-red-400"
+              aria-label="Reset blend"
+              className="ml-auto shrink-0 self-center whitespace-nowrap px-2 py-1 text-xs italic text-stone-400 hover:text-red-600 dark:text-stone-500 dark:hover:text-red-400"
             >
-              Reset
+              ↺ Reset
             </button>
           )}
         </div>
@@ -450,7 +470,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   {DILUTION_PRESETS.map((d) => (
                     <button
                       key={d.value}
-                      onClick={() => setDilutionRate(d.value)}
+                      onClick={() => changeDilution(d.value)}
                       className={`rounded border px-3 py-2 text-left text-xs transition-all ${
                         dilutionRate === d.value
                           ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
@@ -724,7 +744,12 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
 
       {/* ── Right column on desktop / below on mobile: selected oils + compatibility ── */}
       <div className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:pr-0.5">
-        <SelectedOilsCard carriers={selectedCarrierOils} essentials={selectedEOOils} />
+        <SelectedOilsCard
+          carriers={selectedCarriers.map((c) => ({ id: c.oil.id, name: c.oil.name }))}
+          essentials={selectedEOs.map((e) => ({ id: e.oil.id, name: e.oil.name }))}
+          onRemoveCarrier={removeCarrier}
+          onRemoveEO={removeEO}
+        />
 
         <Card>
           <CardHeader>
