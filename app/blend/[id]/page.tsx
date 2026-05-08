@@ -105,6 +105,7 @@ export default async function BlendDetailPage({ params }: { params: Promise<{ id
     name: i.oilName,
     type: i.oilType,
     percentagePct: i.percentagePct,
+    volumeMl: i.oilType === 'CARRIER' ? i.volumeMl : undefined,
   }))
 
   const date = new Date(blend.createdAt).toLocaleDateString('en-GB', {

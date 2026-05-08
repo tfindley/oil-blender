@@ -3,6 +3,7 @@ export interface IngredientInput {
   name: string
   type: 'ESSENTIAL' | 'CARRIER'
   percentagePct: number
+  volumeMl?: number
   dilutionRateMax?: number | null
 }
 
@@ -32,20 +33,21 @@ export function calculateBlend(
   const essentials = ingredients.filter((i) => i.type === 'ESSENTIAL')
   const carriers = ingredients.filter((i) => i.type === 'CARRIER')
 
-  const carrierVolumeMl = totalVolumeMl
   const essentialOilTotalMl = totalVolumeMl * dilutionRate
-  const finalVolumeMl = carrierVolumeMl + essentialOilTotalMl
 
   const sumPct = essentials.reduce((s, i) => s + i.percentagePct, 0)
-  const sumCarrierPct = carriers.reduce((s, c) => s + c.percentagePct, 0)
 
   const calculated: CalculatedIngredient[] = []
   const warnings: string[] = []
 
+  let carrierVolumeMl = 0
   for (const c of carriers) {
-    const fraction = sumCarrierPct > 0 ? c.percentagePct / sumCarrierPct : 1 / carriers.length
-    calculated.push({ ...c, volumeMl: carrierVolumeMl * fraction, drops: 0 })
+    const volumeMl = c.volumeMl ?? totalVolumeMl / carriers.length
+    carrierVolumeMl += volumeMl
+    calculated.push({ ...c, volumeMl, drops: 0 })
   }
+
+  const finalVolumeMl = carrierVolumeMl + essentialOilTotalMl
 
   // Essential oil volumes proportional to their percentage allocation
   for (const e of essentials) {

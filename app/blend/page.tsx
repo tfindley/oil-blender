@@ -36,6 +36,7 @@ export default async function BlendPage({ searchParams }: { searchParams: Promis
             ingredients: {
               select: {
                 percentagePct: true,
+                volumeMl: true,
                 oil: { select: OIL_SELECT },
               },
             },
@@ -48,21 +49,16 @@ export default async function BlendPage({ searchParams }: { searchParams: Promis
   const essentials = oils.filter((o) => o.type === 'ESSENTIAL') as OilSummary[]
 
   let initialBlend: {
-    carriers: Array<{ oil: OilSummary; percentagePct: number }>
+    carriers: Array<{ oil: OilSummary; volumeMl: number }>
     essentials: Array<{ oil: OilSummary; percentagePct: number }>
     totalVolumeMl: number
     dilutionRate: number
   } | undefined
   if (fromBlendData) {
-    const carrierIngredients = fromBlendData.ingredients.filter((i) => i.oil.type === 'CARRIER')
-    const totalCarrierPct = carrierIngredients.reduce((s, c) => s + c.percentagePct, 0)
     initialBlend = {
-      carriers: carrierIngredients.map((c) => ({
-        oil: c.oil as OilSummary,
-        percentagePct: totalCarrierPct > 0
-          ? (c.percentagePct / totalCarrierPct) * 100
-          : 100 / carrierIngredients.length,
-      })),
+      carriers: fromBlendData.ingredients
+        .filter((i) => i.oil.type === 'CARRIER')
+        .map((c) => ({ oil: c.oil as OilSummary, volumeMl: c.volumeMl })),
       essentials: fromBlendData.ingredients
         .filter((i) => i.oil.type === 'ESSENTIAL')
         .map((i) => ({ oil: i.oil as OilSummary, percentagePct: i.percentagePct })),

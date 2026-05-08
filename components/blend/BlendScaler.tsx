@@ -11,6 +11,7 @@ interface ScalerIngredient {
   name: string
   type: 'ESSENTIAL' | 'CARRIER'
   percentagePct: number
+  volumeMl?: number
 }
 
 interface BlendScalerProps {
@@ -22,7 +23,12 @@ interface BlendScalerProps {
 export function BlendScaler({ originalVolumeMl, dilutionRate, ingredients }: BlendScalerProps) {
   const [viewVolumeMl, setViewVolumeMl] = useState(originalVolumeMl)
 
-  const inputs: IngredientInput[] = ingredients.map((i) => ({ ...i, dilutionRateMax: null }))
+  const scale = originalVolumeMl > 0 ? viewVolumeMl / originalVolumeMl : 1
+  const inputs: IngredientInput[] = ingredients.map((i) => ({
+    ...i,
+    volumeMl: i.volumeMl != null ? i.volumeMl * scale : undefined,
+    dilutionRateMax: null,
+  }))
   const calc = calculateBlend(viewVolumeMl, dilutionRate, inputs)
 
   return (

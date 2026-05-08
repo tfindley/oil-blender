@@ -27,7 +27,9 @@ export function QuantityTable({ ingredients, totalVolumeMl }: QuantityTableProps
                 <span className="ml-1.5 text-xs text-stone-400 dark:text-stone-500">{i.type === 'CARRIER' ? 'carrier' : 'EO'}</span>
               </td>
               <td className="px-4 py-2.5 text-right text-stone-600 dark:text-stone-300">
-                {(() => { const pct = Math.round((i.volumeMl / totalVolumeMl) * 100); return pct === 0 ? '<1%' : `${pct}%` })()}
+                {i.type === 'CARRIER'
+                  ? '—'
+                  : (() => { const pct = Math.round((i.volumeMl / totalVolumeMl) * 100); return pct === 0 ? '<1%' : `${pct}%` })()}
               </td>
               <td className="px-4 py-2.5 text-right font-mono text-stone-800 dark:text-stone-100">{i.volumeMl.toFixed(1)}</td>
               <td className="px-4 py-2.5 text-right font-mono text-stone-800 dark:text-stone-100">
@@ -39,8 +41,8 @@ export function QuantityTable({ ingredients, totalVolumeMl }: QuantityTableProps
         <tfoot className="border-t border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800">
           <tr>
             <td className="px-4 py-2 font-medium text-stone-700 dark:text-stone-200">Total</td>
-            <td className="px-4 py-2 text-right font-medium text-stone-700 dark:text-stone-200">100%</td>
-            <td className="px-4 py-2 text-right font-mono font-medium text-stone-700 dark:text-stone-200">{totalVolumeMl.toFixed(0)}</td>
+            <td className="px-4 py-2 text-right text-stone-400 dark:text-stone-500">—</td>
+            <td className="px-4 py-2 text-right font-mono font-medium text-stone-700 dark:text-stone-200">{ingredients.reduce((s, i) => s + i.volumeMl, 0).toFixed(0)}</td>
             <td className="px-4 py-2 text-right text-stone-400 dark:text-stone-500">—</td>
           </tr>
           <tr>

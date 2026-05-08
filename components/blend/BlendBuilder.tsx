@@ -27,7 +27,7 @@ interface SelectedEO {
 
 interface SelectedCarrier {
   oil: OilSummary
-  percentagePct: number
+  volumeMl: number
 }
 
 interface Pairing {
@@ -43,7 +43,7 @@ interface BlendBuilderProps {
   carriers: OilSummary[]
   essentials: OilSummary[]
   initialBlend?: {
-    carriers: Array<{ oil: OilSummary; percentagePct: number }>
+    carriers: Array<{ oil: OilSummary; volumeMl: number }>
     essentials: Array<{ oil: OilSummary; percentagePct: number }>
     totalVolumeMl: number
     dilutionRate: number
@@ -116,7 +116,8 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
       oilId: c.oil.id,
       name: c.oil.name,
       type: 'CARRIER' as const,
-      percentagePct: c.percentagePct,
+      percentagePct: 0,
+      volumeMl: c.volumeMl,
     })),
     ...selectedEOs.map((e) => ({
       oilId: e.oil.id,
@@ -134,26 +135,46 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const unsafePairings = pairings.filter((p) => p.rating === 'UNSAFE')
   const avoidPairings = pairings.filter((p) => p.rating === 'AVOID')
 
+  const carrierSum = selectedCarriers.reduce((s, c) => s + c.volumeMl, 0)
+  const carrierDrift = carrierSum - totalVolumeMl
+
   function addCarrier(oil: OilSummary) {
     if (selectedCarriers.some((c) => c.oil.id === oil.id)) return
     setCarrierSearch('')
     setAvoidAcknowledged(false)
-    const next = [...selectedCarriers, { oil, percentagePct: 0 }]
-    const even = 100 / next.length
-    setSelectedCarriers(next.map((c) => ({ ...c, percentagePct: even })))
+    const next = [...selectedCarriers, { oil, volumeMl: 0 }]
+    const even = totalVolumeMl / next.length
+    setSelectedCarriers(next.map((c) => ({ ...c, volumeMl: even })))
   }
 
   function removeCarrier(id: string) {
     setAvoidAcknowledged(false)
-    const next = selectedCarriers.filter((c) => c.oil.id !== id)
-    const even = next.length > 0 ? 100 / next.length : 0
-    setSelectedCarriers(next.map((c) => ({ ...c, percentagePct: even })))
+    setSelectedCarriers(selectedCarriers.filter((c) => c.oil.id !== id))
   }
 
-  function updateCarrierPct(id: string, pct: number) {
+  function updateCarrierMl(id: string, ml: number) {
     setSelectedCarriers(selectedCarriers.map((c) =>
-      c.oil.id === id ? { ...c, percentagePct: pct } : c
+      c.oil.id === id ? { ...c, volumeMl: Math.max(0, ml) } : c
     ))
+  }
+
+  function fitCarriersToVolume() {
+    if (selectedCarriers.length === 0) return
+    if (carrierSum <= 0) {
+      const even = totalVolumeMl / selectedCarriers.length
+      setSelectedCarriers(selectedCarriers.map((c) => ({ ...c, volumeMl: even })))
+    } else {
+      const scale = totalVolumeMl / carrierSum
+      setSelectedCarriers(selectedCarriers.map((c) => ({ ...c, volumeMl: c.volumeMl * scale })))
+    }
+  }
+
+  function changeVolume(newVolume: number) {
+    if (selectedCarriers.length > 0 && carrierSum > 0) {
+      const scale = newVolume / carrierSum
+      setSelectedCarriers(selectedCarriers.map((c) => ({ ...c, volumeMl: c.volumeMl * scale })))
+    }
+    setTotalVolumeMl(newVolume)
   }
 
   function addEO(oil: OilSummary) {
@@ -648,20 +669,16 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                         <span className="text-sm font-medium text-amber-900 dark:text-amber-200">{c.oil.name}</span>
                         <span className="ml-1.5 text-[10px] italic text-amber-600 dark:text-amber-500">{c.oil.botanicalName}</span>
                       </div>
-                      {selectedCarriers.length > 1 && (
-                        <>
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            step={1}
-                            value={Math.round(c.percentagePct)}
-                            onChange={(ev) => updateCarrierPct(c.oil.id, parseFloat(ev.target.value) || 0)}
-                            className="w-14 rounded border border-amber-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100"
-                          />
-                          <span className="text-xs text-amber-600 dark:text-amber-500">%</span>
-                        </>
-                      )}
+                      <input
+                        type="number"
+                        min={0}
+                        max={500}
+                        step={1}
+                        value={Math.round(c.volumeMl)}
+                        onChange={(ev) => updateCarrierMl(c.oil.id, parseFloat(ev.target.value) || 0)}
+                        className="w-16 rounded border border-amber-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100"
+                      />
+                      <span className="text-xs text-amber-600 dark:text-amber-500">ml</span>
                       <button
                         onClick={() => removeCarrier(c.oil.id)}
                         className="-mr-1 rounded-full p-1.5 text-amber-400 hover:bg-red-50 hover:text-red-500 dark:text-amber-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
@@ -673,10 +690,17 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   ))}
                 </div>
               )}
-              {selectedCarriers.length > 1 && Math.abs(selectedCarriers.reduce((s, c) => s + c.percentagePct, 0) - 100) > 0.1 && (
-                <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-500">
-                  Carrier percentages sum to {selectedCarriers.reduce((s, c) => s + c.percentagePct, 0).toFixed(0)}% (should be 100%).
-                </p>
+              {selectedCarriers.length > 0 && Math.abs(carrierDrift) >= 0.5 && (
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-amber-700 dark:text-amber-500">
+                  <span>
+                    {carrierDrift > 0
+                      ? `${carrierDrift.toFixed(0)} ml over Volume`
+                      : `${(-carrierDrift).toFixed(0)} ml unallocated`}
+                  </span>
+                  <button onClick={fitCarriersToVolume} className="underline hover:no-underline">
+                    Fit to Volume
+                  </button>
+                </div>
               )}
             </div>
 
@@ -776,7 +800,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 {VOLUME_PRESETS.map((v) => (
                   <button
                     key={v}
-                    onClick={() => { setTotalVolumeMl(v); setCustomVolume('') }}
+                    onClick={() => { changeVolume(v); setCustomVolume('') }}
                     className={`rounded border px-3 py-2 text-sm transition-all ${
                       totalVolumeMl === v && !customVolume
                         ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
@@ -795,14 +819,14 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   onChange={(e) => {
                     setCustomVolume(e.target.value)
                     const v = parseInt(e.target.value)
-                    if (v >= 5) setTotalVolumeMl(v)
+                    if (v >= 5) changeVolume(v)
                   }}
                   className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
                 />
               </div>
               <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
-                Final mix: {(totalVolumeMl + totalVolumeMl * dilutionRate).toFixed(1)} ml
-                ({totalVolumeMl} ml carrier + {(totalVolumeMl * dilutionRate).toFixed(1)} ml essentials)
+                Final mix: {calc.finalVolumeMl.toFixed(1)} ml
+                ({calc.carrierVolumeMl.toFixed(1)} ml carrier + {calc.essentialOilTotalMl.toFixed(1)} ml essentials)
               </p>
             </div>
 
