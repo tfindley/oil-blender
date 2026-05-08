@@ -13,6 +13,7 @@ export interface CalculatedIngredient extends IngredientInput {
 
 export interface BlendCalculation {
   totalVolumeMl: number
+  finalVolumeMl: number
   dilutionRate: number
   essentialOilTotalMl: number
   carrierVolumeMl: number
@@ -31,18 +32,19 @@ export function calculateBlend(
   const essentials = ingredients.filter((i) => i.type === 'ESSENTIAL')
   const carriers = ingredients.filter((i) => i.type === 'CARRIER')
 
+  const carrierVolumeMl = totalVolumeMl
   const essentialOilTotalMl = totalVolumeMl * dilutionRate
-  const carrierVolumeMl = totalVolumeMl - essentialOilTotalMl
+  const finalVolumeMl = carrierVolumeMl + essentialOilTotalMl
 
   const sumPct = essentials.reduce((s, i) => s + i.percentagePct, 0)
+  const sumCarrierPct = carriers.reduce((s, c) => s + c.percentagePct, 0)
 
   const calculated: CalculatedIngredient[] = []
   const warnings: string[] = []
 
-  // Carrier ingredients split evenly if multiple (or single at full carrier volume)
-  const carrierShare = carriers.length > 0 ? carrierVolumeMl / carriers.length : 0
   for (const c of carriers) {
-    calculated.push({ ...c, volumeMl: carrierShare, drops: 0 })
+    const fraction = sumCarrierPct > 0 ? c.percentagePct / sumCarrierPct : 1 / carriers.length
+    calculated.push({ ...c, volumeMl: carrierVolumeMl * fraction, drops: 0 })
   }
 
   // Essential oil volumes proportional to their percentage allocation
@@ -70,6 +72,7 @@ export function calculateBlend(
 
   return {
     totalVolumeMl,
+    finalVolumeMl,
     dilutionRate,
     essentialOilTotalMl,
     carrierVolumeMl,

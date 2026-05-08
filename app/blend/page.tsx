@@ -47,16 +47,29 @@ export default async function BlendPage({ searchParams }: { searchParams: Promis
   const carriers = oils.filter((o) => o.type === 'CARRIER') as OilSummary[]
   const essentials = oils.filter((o) => o.type === 'ESSENTIAL') as OilSummary[]
 
-  const initialBlend = fromBlendData
-    ? {
-        carrier: (fromBlendData.ingredients.find((i) => i.oil.type === 'CARRIER')?.oil ?? null) as OilSummary | null,
-        essentials: fromBlendData.ingredients
-          .filter((i) => i.oil.type === 'ESSENTIAL')
-          .map((i) => ({ oil: i.oil as OilSummary, percentagePct: i.percentagePct })),
-        totalVolumeMl: fromBlendData.totalVolumeMl,
-        dilutionRate: fromBlendData.dilutionRate,
-      }
-    : undefined
+  let initialBlend: {
+    carriers: Array<{ oil: OilSummary; percentagePct: number }>
+    essentials: Array<{ oil: OilSummary; percentagePct: number }>
+    totalVolumeMl: number
+    dilutionRate: number
+  } | undefined
+  if (fromBlendData) {
+    const carrierIngredients = fromBlendData.ingredients.filter((i) => i.oil.type === 'CARRIER')
+    const totalCarrierPct = carrierIngredients.reduce((s, c) => s + c.percentagePct, 0)
+    initialBlend = {
+      carriers: carrierIngredients.map((c) => ({
+        oil: c.oil as OilSummary,
+        percentagePct: totalCarrierPct > 0
+          ? (c.percentagePct / totalCarrierPct) * 100
+          : 100 / carrierIngredients.length,
+      })),
+      essentials: fromBlendData.ingredients
+        .filter((i) => i.oil.type === 'ESSENTIAL')
+        .map((i) => ({ oil: i.oil as OilSummary, percentagePct: i.percentagePct })),
+      totalVolumeMl: fromBlendData.totalVolumeMl,
+      dilutionRate: fromBlendData.dilutionRate,
+    }
+  }
 
   if (oils.length === 0) {
     return (
@@ -77,7 +90,7 @@ export default async function BlendPage({ searchParams }: { searchParams: Promis
       <div className="mb-8">
         <h1 className="font-serif text-3xl font-bold text-stone-900">Build Your Blend</h1>
         <p className="mt-2 text-stone-600">
-          Choose a carrier oil, add essential oils, and see your compatibility score in real time.
+          Choose your carrier oils, add essential oils, and see your compatibility score in real time.
         </p>
       </div>
       <BlendBuilder carriers={carriers} essentials={essentials} initialBlend={initialBlend} />

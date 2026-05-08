@@ -25,6 +25,11 @@ interface SelectedEO {
   percentagePct: number
 }
 
+interface SelectedCarrier {
+  oil: OilSummary
+  percentagePct: number
+}
+
 interface Pairing {
   oilAId: string
   oilAName: string
@@ -38,7 +43,7 @@ interface BlendBuilderProps {
   carriers: OilSummary[]
   essentials: OilSummary[]
   initialBlend?: {
-    carrier: OilSummary | null
+    carriers: Array<{ oil: OilSummary; percentagePct: number }>
     essentials: Array<{ oil: OilSummary; percentagePct: number }>
     totalVolumeMl: number
     dilutionRate: number
@@ -48,7 +53,7 @@ interface BlendBuilderProps {
 export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilderProps) {
   const router = useRouter()
 
-  const [carrier, setCarrier] = useState<OilSummary | null>(initialBlend?.carrier ?? null)
+  const [selectedCarriers, setSelectedCarriers] = useState<SelectedCarrier[]>(initialBlend?.carriers ?? [])
   const [selectedEOs, setSelectedEOs] = useState<SelectedEO[]>(initialBlend?.essentials ?? [])
   const [totalVolumeMl, setTotalVolumeMl] = useState(initialBlend?.totalVolumeMl ?? 50)
   const [customVolume, setCustomVolume] = useState('')
@@ -63,10 +68,8 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const [eoInputMode, setEoInputMode] = useState<'pct' | 'drops'>('pct')
   const [carrierSearch, setCarrierSearch] = useState('')
   const [carrierMode, setCarrierMode] = useState<'search' | 'browse'>('search')
-  const [openSection, setOpenSection] = useState<1 | 2>(initialBlend?.carrier ? 2 : 1)
+  const [openSection, setOpenSection] = useState<1 | 2>(initialBlend?.carriers && initialBlend.carriers.length > 0 ? 2 : 1)
   const [avoidAcknowledged, setAvoidAcknowledged] = useState(false)
-
-  const allSelectedIds = [carrier?.id, ...selectedEOs.map((e) => e.oil.id)].filter(Boolean) as string[]
 
   const fetchPairings = useCallback(async (ids: string[]) => {
     if (ids.length < 2) { setPairings([]); return }
@@ -77,14 +80,20 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   }, [])
 
   useEffect(() => {
-    fetchPairings(allSelectedIds)
-  }, [carrier?.id, selectedEOs.map((e) => e.oil.id).join(',')]) // eslint-disable-line
+    fetchPairings([...selectedCarriers.map((c) => c.oil.id), ...selectedEOs.map((e) => e.oil.id)])
+  }, [selectedCarriers.map((c) => c.oil.id).join(','), selectedEOs.map((e) => e.oil.id).join(',')]) // eslint-disable-line
 
   const score = scoreBlend(pairings)
-  const hasBlend = !!carrier && selectedEOs.length > 0
+  const hasBlend = selectedCarriers.length > 0 && selectedEOs.length > 0
+
+  const carrierSubtitle =
+    openSection === 1 ? 'The base that delivers the blend to your skin. Pick one or more.'
+    : selectedCarriers.length === 0 ? 'None selected'
+    : selectedCarriers.length <= 2 ? selectedCarriers.map((c) => c.oil.name).join(' + ')
+    : `${selectedCarriers.length} carriers`
 
   function handleReset() {
-    setCarrier(null)
+    setSelectedCarriers([])
     setSelectedEOs([])
     setTotalVolumeMl(50)
     setCustomVolume('')
@@ -103,7 +112,12 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   }
 
   const ingredientInputs = [
-    ...(carrier ? [{ oilId: carrier.id, name: carrier.name, type: 'CARRIER' as const, percentagePct: 100 - dilutionRate * 100 }] : []),
+    ...selectedCarriers.map((c) => ({
+      oilId: c.oil.id,
+      name: c.oil.name,
+      type: 'CARRIER' as const,
+      percentagePct: c.percentagePct,
+    })),
     ...selectedEOs.map((e) => ({
       oilId: e.oil.id,
       name: e.oil.name,
@@ -113,12 +127,34 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     })),
   ]
 
-  const calc = carrier
+  const calc = selectedCarriers.length > 0
     ? calculateBlend(totalVolumeMl, dilutionRate, ingredientInputs)
-    : { totalVolumeMl, dilutionRate, essentialOilTotalMl: 0, carrierVolumeMl: 0, ingredients: [], warnings: [] }
+    : { totalVolumeMl, finalVolumeMl: totalVolumeMl, dilutionRate, essentialOilTotalMl: 0, carrierVolumeMl: 0, ingredients: [], warnings: [] }
 
   const unsafePairings = pairings.filter((p) => p.rating === 'UNSAFE')
   const avoidPairings = pairings.filter((p) => p.rating === 'AVOID')
+
+  function addCarrier(oil: OilSummary) {
+    if (selectedCarriers.some((c) => c.oil.id === oil.id)) return
+    setCarrierSearch('')
+    setAvoidAcknowledged(false)
+    const next = [...selectedCarriers, { oil, percentagePct: 0 }]
+    const even = 100 / next.length
+    setSelectedCarriers(next.map((c) => ({ ...c, percentagePct: even })))
+  }
+
+  function removeCarrier(id: string) {
+    setAvoidAcknowledged(false)
+    const next = selectedCarriers.filter((c) => c.oil.id !== id)
+    const even = next.length > 0 ? 100 / next.length : 0
+    setSelectedCarriers(next.map((c) => ({ ...c, percentagePct: even })))
+  }
+
+  function updateCarrierPct(id: string, pct: number) {
+    setSelectedCarriers(selectedCarriers.map((c) =>
+      c.oil.id === id ? { ...c, percentagePct: pct } : c
+    ))
+  }
 
   function addEO(oil: OilSummary) {
     if (selectedEOs.some((e) => e.oil.id === oil.id)) return
@@ -175,18 +211,19 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     }
   }
 
-  function isUnsafeWithCurrent(eo: OilSummary): Pairing | undefined {
-    return pairings.find(
-      (p) =>
-        p.rating === 'UNSAFE' &&
-        ((p.oilAId === carrier?.id && p.oilBId === eo.id) ||
-          (p.oilBId === carrier?.id && p.oilAId === eo.id) ||
-          selectedEOs.some(
-            (s) =>
-              (p.oilAId === s.oil.id && p.oilBId === eo.id) ||
-              (p.oilBId === s.oil.id && p.oilAId === eo.id)
-          ))
-    )
+  const selectedIds = new Set([
+    ...selectedCarriers.map((c) => c.oil.id),
+    ...selectedEOs.map((e) => e.oil.id),
+  ])
+  const unsafePartner = new Map<string, Pairing>()
+  for (const p of pairings) {
+    if (p.rating !== 'UNSAFE') continue
+    if (selectedIds.has(p.oilAId) && !unsafePartner.has(p.oilBId)) unsafePartner.set(p.oilBId, p)
+    if (selectedIds.has(p.oilBId) && !unsafePartner.has(p.oilAId)) unsafePartner.set(p.oilAId, p)
+  }
+
+  function findUnsafePairing(oil: OilSummary): Pairing | undefined {
+    return unsafePartner.get(oil.id)
   }
 
   const filteredCarriers = carriers.filter(
@@ -205,14 +242,14 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   )
 
   const canSave =
-    !!carrier &&
+    selectedCarriers.length > 0 &&
     selectedEOs.length >= 1 &&
     blendName.trim().length > 0 &&
     unsafePairings.length === 0 &&
     (avoidPairings.length === 0 || avoidAcknowledged)
 
   async function handleSave() {
-    if (!canSave || !carrier) return
+    if (!canSave) return
     setSaving(true)
     setSaveError('')
     const payload = {
@@ -261,9 +298,9 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
               onClick={() => setOpenSection(1)}
             >
               <div>
-                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">1. Choose Your Carrier Oil</h2>
+                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">1. Choose Your Carrier Oils</h2>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {openSection === 1 ? 'The base that delivers the blend to your skin.' : (carrier?.name ?? 'None selected')}
+                  {carrierSubtitle}
                 </p>
               </div>
               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -309,19 +346,37 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   />
                   {carrierSearch && (
                     <div className="absolute z-10 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800">
-                      {filteredCarriers.slice(0, 8).map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => { setCarrier(c); setCarrierSearch(''); setOpenSection(2); setAvoidAcknowledged(false) }}
-                          className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-stone-800 transition-colors hover:bg-amber-50 dark:text-stone-200 dark:hover:bg-amber-950/30"
-                        >
-                          <div>
-                            <span className="font-medium">{c.name}</span>
-                            <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</span>
-                          </div>
-                          <span className="text-xs text-stone-400 dark:text-stone-500">{c.aroma}</span>
-                        </button>
-                      ))}
+                      {filteredCarriers.slice(0, 8).map((c) => {
+                        const isSelected = selectedCarriers.some((s) => s.oil.id === c.id)
+                        const unsafe = !isSelected ? findUnsafePairing(c) : undefined
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => !unsafe && (isSelected ? removeCarrier(c.id) : addCarrier(c))}
+                            disabled={!!unsafe}
+                            title={unsafe ? `Cannot add: ${unsafe.reason}` : c.description}
+                            className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors ${
+                              unsafe
+                                ? 'cursor-not-allowed bg-red-50 text-red-400 dark:bg-red-950/50 dark:text-red-500'
+                                : isSelected
+                                  ? 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
+                                  : 'text-stone-800 hover:bg-amber-50 dark:text-stone-200 dark:hover:bg-amber-950/30'
+                            }`}
+                          >
+                            <div>
+                              <span className="font-medium">{c.name}</span>
+                              <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</span>
+                            </div>
+                            {unsafe ? (
+                              <span className="text-xs text-red-500">🚫 Unsafe</span>
+                            ) : isSelected ? (
+                              <span className="text-xs text-amber-700 dark:text-amber-400">✓ Selected</span>
+                            ) : (
+                              <span className="text-xs text-stone-400 dark:text-stone-500">{c.aroma}</span>
+                            )}
+                          </button>
+                        )
+                      })}
                       {filteredCarriers.length === 0 && (
                         <p className="px-3 py-2.5 text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
                       )}
@@ -340,26 +395,31 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                     onChange={(e) => setCarrierSearch(e.target.value)}
                     className="mb-3 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
                   />
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {filteredCarriers.map((c) => {
-                      const isSelected = carrier?.id === c.id
+                      const isSelected = selectedCarriers.some((s) => s.oil.id === c.id)
+                      const unsafe = !isSelected ? findUnsafePairing(c) : undefined
                       return (
                         <button
                           key={c.id}
-                          onClick={() => {
-                            const next = isSelected ? null : c
-                            setCarrier(next)
-                            setAvoidAcknowledged(false)
-                            if (next) setOpenSection(2)
-                          }}
+                          onClick={() => !unsafe && (isSelected ? removeCarrier(c.id) : addCarrier(c))}
+                          disabled={!!unsafe}
+                          title={unsafe ? `Cannot add: ${unsafe.reason}` : undefined}
                           className={`rounded-lg border p-3 text-left text-sm transition-colors ${
-                            isSelected
-                              ? 'border-amber-500 bg-amber-50 dark:border-amber-500 dark:bg-amber-950'
-                              : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
+                            unsafe
+                              ? 'cursor-not-allowed border-red-100 bg-red-50/50 opacity-60 dark:border-red-900 dark:bg-red-950/20'
+                              : isSelected
+                                ? 'border-amber-500 bg-amber-50 dark:border-amber-500 dark:bg-amber-950'
+                                : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
                           }`}
                         >
-                          <p className="font-medium text-stone-800 dark:text-stone-100">{c.name}</p>
-                          <p className="text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</p>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-medium text-stone-800 dark:text-stone-100">{c.name}</p>
+                              <p className="text-xs italic text-stone-400 dark:text-stone-500">{c.botanicalName}</p>
+                            </div>
+                            {unsafe && <span className="shrink-0 text-xs text-red-500">🚫</span>}
+                          </div>
                           <p className="mt-1 text-xs italic text-stone-500 dark:text-stone-400">{c.aroma}</p>
                           <ul className="mt-1.5 space-y-0.5">
                             {c.benefits.slice(0, 2).map((b, i) => (
@@ -370,11 +430,21 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                       )
                     })}
                     {filteredCarriers.length === 0 && (
-                      <p className="col-span-3 py-4 text-center text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
+                      <p className="col-span-2 py-4 text-center text-sm text-stone-400 dark:text-stone-500">No oils found.</p>
                     )}
                   </div>
                 </div>
               )}
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setOpenSection(2)}
+                  disabled={selectedCarriers.length === 0}
+                  className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next →
+                </button>
+              </div>
             </CardBody>
           )}
         </Card>
@@ -443,7 +513,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 {eoSearch && (
                   <div className="absolute z-10 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800">
                     {filteredEOs.slice(0, 8).map((eo) => {
-                      const unsafe = isUnsafeWithCurrent(eo)
+                      const unsafe = findUnsafePairing(eo)
                       return (
                         <button
                           key={eo.id}
@@ -488,7 +558,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 />
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {filteredEOs.map((eo) => {
-                    const unsafe = isUnsafeWithCurrent(eo)
+                    const unsafe = findUnsafePairing(eo)
                     return (
                       <button
                         key={eo.id}
@@ -551,7 +621,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
           <CardHeader>
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Your Blend</h2>
-              {(carrier || selectedEOs.length > 0) && (
+              {(selectedCarriers.length > 0 || selectedEOs.length > 0) && (
                 <button
                   onClick={handleReset}
                   className="rounded px-3 py-1.5 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
@@ -563,25 +633,50 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
           </CardHeader>
           <CardBody className="space-y-4">
 
-            {/* Carrier */}
+            {/* Carriers */}
             <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Carrier Oil</p>
-              {carrier ? (
-                <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-950/40">
-                  <div>
-                    <span className="text-sm font-medium text-amber-900 dark:text-amber-200">{carrier.name}</span>
-                    <span className="ml-2 text-xs italic text-amber-600 dark:text-amber-500">{carrier.aroma}</span>
-                  </div>
-                  <button
-                    onClick={() => { setCarrier(null); setAvoidAcknowledged(false) }}
-                    className="-mr-1 ml-2 rounded-full p-1.5 text-amber-400 hover:bg-red-50 hover:text-red-500 dark:text-amber-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-                    aria-label="Remove carrier"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                Carrier Oils {selectedCarriers.length > 1 && `(${selectedCarriers.length})`}
+              </p>
+              {selectedCarriers.length === 0 ? (
                 <p className="text-sm italic text-stone-400 dark:text-stone-500">None selected</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {selectedCarriers.map((c) => (
+                    <div key={c.oil.id} className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-950/40">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-medium text-amber-900 dark:text-amber-200">{c.oil.name}</span>
+                        <span className="ml-1.5 text-[10px] italic text-amber-600 dark:text-amber-500">{c.oil.botanicalName}</span>
+                      </div>
+                      {selectedCarriers.length > 1 && (
+                        <>
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={Math.round(c.percentagePct)}
+                            onChange={(ev) => updateCarrierPct(c.oil.id, parseFloat(ev.target.value) || 0)}
+                            className="w-14 rounded border border-amber-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100"
+                          />
+                          <span className="text-xs text-amber-600 dark:text-amber-500">%</span>
+                        </>
+                      )}
+                      <button
+                        onClick={() => removeCarrier(c.oil.id)}
+                        className="-mr-1 rounded-full p-1.5 text-amber-400 hover:bg-red-50 hover:text-red-500 dark:text-amber-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                        aria-label={`Remove ${c.oil.name}`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selectedCarriers.length > 1 && Math.abs(selectedCarriers.reduce((s, c) => s + c.percentagePct, 0) - 100) > 0.1 && (
+                <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-500">
+                  Carrier percentages sum to {selectedCarriers.reduce((s, c) => s + c.percentagePct, 0).toFixed(0)}% (should be 100%).
+                </p>
               )}
             </div>
 
@@ -705,6 +800,10 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
                 />
               </div>
+              <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
+                Final mix: {(totalVolumeMl + totalVolumeMl * dilutionRate).toFixed(1)} ml
+                ({totalVolumeMl} ml carrier + {(totalVolumeMl * dilutionRate).toFixed(1)} ml essentials)
+              </p>
             </div>
 
             {/* Dilution */}
@@ -726,11 +825,6 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   </button>
                 ))}
               </div>
-              {carrier && (
-                <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
-                  {calc.essentialOilTotalMl.toFixed(2)} ml EOs · {calc.carrierVolumeMl.toFixed(2)} ml carrier
-                </p>
-              )}
             </div>
 
           </CardBody>
@@ -788,7 +882,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                 {saving ? 'Saving…' : 'Save & Get Recipe Card'}
               </Button>
 
-              {!carrier && (
+              {selectedCarriers.length === 0 && (
                 <p className="text-center text-xs text-stone-400 dark:text-stone-500">Choose a carrier oil to get started.</p>
               )}
             </div>
