@@ -5,13 +5,26 @@ interface SelectedOilsCardProps {
   essentials: Array<{ id: string; name: string }>
   onRemoveCarrier: (id: string) => void
   onRemoveEO: (id: string) => void
+  onReset?: () => void
 }
 
-export function SelectedOilsCard({ carriers, essentials, onRemoveCarrier, onRemoveEO }: SelectedOilsCardProps) {
+export function SelectedOilsCard({ carriers, essentials, onRemoveCarrier, onRemoveEO, onReset }: SelectedOilsCardProps) {
+  const hasAnyOil = carriers.length > 0 || essentials.length > 0
+
   return (
     <Card>
       <CardHeader>
-        <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">In Your Blend</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">In Your Blend</h2>
+          {hasAnyOil && onReset && (
+            <button
+              onClick={onReset}
+              className="rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:border-red-400 hover:bg-red-50 hover:text-red-700 dark:border-stone-600 dark:text-stone-300 dark:hover:border-red-700 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+            >
+              ↺ Reset
+            </button>
+          )}
+        </div>
       </CardHeader>
       <CardBody className="space-y-4 text-sm">
         <div>

@@ -312,7 +312,6 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     { id: 4, shortLabel: 'Save', fullLabel: '4. Save Blend' },
   ]
   const activeTabSpec = tabs.find((t) => t.id === activeTab)!
-  const hasAnyOil = selectedCarriers.length > 0 || selectedEOs.length > 0
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -320,7 +319,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
       {/* ── Left column / full-width on mobile: tabs ── */}
       <div className="lg:col-span-2 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto">
         {/* Tab strip */}
-        <div className="flex items-stretch border-b border-stone-200 overflow-x-auto dark:border-stone-700">
+        <div className="flex items-stretch border-b border-stone-200 dark:border-stone-700">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -338,15 +337,6 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
               )}
             </button>
           ))}
-          {hasAnyOil && (
-            <button
-              onClick={handleReset}
-              aria-label="Reset blend"
-              className="ml-auto shrink-0 self-center whitespace-nowrap px-2 py-1 text-xs italic text-stone-400 hover:text-red-600 dark:text-stone-500 dark:hover:text-red-400"
-            >
-              ↺ Reset
-            </button>
-          )}
         </div>
 
         {/* Tab content */}
@@ -749,6 +739,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
           essentials={selectedEOs.map((e) => ({ id: e.oil.id, name: e.oil.name }))}
           onRemoveCarrier={removeCarrier}
           onRemoveEO={removeEO}
+          onReset={handleReset}
         />
 
         <Card>
