@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import pkg from '@/package.json'
 
 export const metadata = {
   title: 'About',
@@ -8,13 +9,25 @@ export const metadata = {
 
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Oil Blender'
 const isCustomName = siteName !== 'Oil Blender'
+const version = pkg.version
 
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="mb-10">
         <div className="mb-3 text-4xl">🌿</div>
-        <h1 className="font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">About {siteName}</h1>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 className="font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">About {siteName}</h1>
+          <a
+            href={`https://github.com/tfindley/oil-blender/releases/tag/v${version}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-sm text-stone-400 hover:text-amber-700 dark:text-stone-500 dark:hover:text-amber-500"
+            title={`View v${version} release notes`}
+          >
+            v{version}
+          </a>
+        </div>
         {isCustomName && (
           <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
             Powered by{' '}
@@ -64,13 +77,17 @@ export default function AboutPage() {
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[
             'Blend builder with live compatibility scoring',
-            'A–F compatibility grade for every blend',
+            'Multi-carrier blending (up to 5) with ml-based input',
+            'Up to 5 essential oils per blend, measured in drops',
+            'Additive carrier model — Volume = carrier amount, EOs add on top',
+            'A–F compatibility grade including carrier↔carrier pairings',
             'EXCELLENT / GOOD / CAUTION / AVOID / UNSAFE pairing system',
             'Hard blocks for genuinely dangerous combinations',
+            'Per-oil max-dilution safety warnings',
             '30 essential oils + 25 carrier oils in the library',
-            'Accurate quantity calculator (ml + drops)',
+            'Aromatherapy glossary covering 42 common terms',
             'Dilution rate guidance (1–5%)',
-            'Batch volume presets (10–200ml)',
+            'Batch volume presets (10–200ml) with proportional rescale',
             'Persistent shareable blend URLs',
             'PDF recipe card with QR code download',
             'Per-oil profiles: benefits, origins, contraindications',

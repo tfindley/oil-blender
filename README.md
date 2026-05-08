@@ -13,9 +13,9 @@
 
 Oil Blender lets you:
 
-- **Build a blend** — pick a carrier oil and up to 5 essential oils
+- **Build a blend** — pick up to 5 carrier oils (jojoba + sweet almond, etc.) and up to 5 essential oils
 - **See compatibility live** — every oil pair is rated Excellent / Good / Caution / Avoid / Unsafe
-- **Get exact quantities** — ml and drop counts at any volume (10–200ml) and dilution rate (1–5%)
+- **Get exact quantities** — carriers in ml, essential oils in drops; additive carrier model (100 ml carrier + 3% EOs = 103 ml final)
 - **Download a PDF recipe card** — with ingredients, oil profiles, pairing notes, and a QR code
 - **Share your blend** — every saved blend gets a permanent URL
 - **Browse curated blends** — featured community blends on the homepage and `/blends`
@@ -26,10 +26,13 @@ Oil Blender lets you:
 
 | Feature | Detail |
 |---|---|
-| Blend builder | Carrier + up to 5 EOs with live compatibility panel |
-| Compatibility scoring | A–F grade per blend; EXCELLENT / GOOD / CAUTION / AVOID / UNSAFE per pair |
+| Blend builder | Up to 5 carriers + up to 5 EOs with live compatibility panel; accordion sections, search/browse picker |
+| Multi-carrier blending | Mix multiple carriers (e.g. 50 ml jojoba + 50 ml sweet almond); ml-based input with drift warning + "Fit to Volume" rebalance |
+| Additive carrier model | Volume = carrier volume target; essential oils add on top (matches aromatherapy practice) |
+| Compatibility scoring | A–F grade per blend; EXCELLENT / GOOD / CAUTION / AVOID / UNSAFE per pair; carrier↔carrier, carrier↔EO, and EO↔EO pairings all score equally |
 | Safety hard-blocks | UNSAFE combinations cannot be saved (validated client + server) |
-| Quantity calculator | ml + drops per ingredient at any volume/dilution |
+| Per-oil dilution check | Warns when any EO exceeds its recommended max dilution at the chosen volume |
+| Quantity calculator | ml per carrier, drops per essential oil; "Final mix" hint shows actual total |
 | PDF export | Downloadable recipe card with blend data and QR code, generated client-side |
 | Shareable URLs | Persistent `/blend/[id]` URL for every saved blend |
 | View tracking | Each blend page visit increments a view counter |

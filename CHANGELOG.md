@@ -4,6 +4,100 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.1.10] — 2026-05-08
+
+### Changed
+- **Unified oil picker** — Sections 1 and 2 in the blend builder now share a single `<OilPicker>` component (`components/blend/OilPicker.tsx`). Identical interaction model: selected oils stay visible in the picker with an amber highlight + ✓ marker; clicking a selected card removes it (highlight-toggle). Previously EOs vanished from the picker on add — this asymmetry is gone.
+- **Carrier cap of 5** — `MAX_CARRIERS = 5`, matching `MAX_EOS`. When at the cap, unselected cards are disabled with a "deselect one to add another" hint; selected cards remain interactive so users can remove from the picker.
+- **EO % / drops toggle removed** — drops is now the only display mode. Removed the iOS-style sliding toggle; deleted the `eoInputMode` state, the percent input branch, the `updatePct` and `normalizePercentages` helpers, and the "Percentages don't sum" warning button. Per-EO safety warning (calculator's `dilutionRateMax` check) still fires.
+- **Consistent right-column labels** — `Carrier Oils (X/5)` and `Essential Oils (X/5)` use the same `(N/5)` format; `MAX_CARRIERS` / `MAX_EOS` constants substituted for literal `5`.
+- **Aligned section titles** — `1. Choose Your Carrier Oils` and `2. Choose Your Essential Oils` (was "Add Essential Oils").
+- **Aligned right-column row styling** — EO entries now use the same amber-bordered card as carriers; `<SelectedIngredientRow>` shared component.
+- **`DROPS_PER_ML` exported** from `lib/blend-calculator.ts` along with new `pctToDrops` and `dropsToPct` helpers; eliminates four hardcoded `20`s and the inverse drops↔percentage math repetition.
+- **`MIN_DILUTION_RATE = 0.001` + `dilutionFromEOs(eos)` helper** in `BlendBuilder` — fixes a floor-asymmetry where `addEO` lacked the 0.1% minimum that `removeEO`/`updateDrops` enforced.
+- **BlendScaler** — Volume preset buttons match the builder's touch-friendly sizing (`px-3 py-2 text-sm`); preset list extended to include `200 ml`.
+
+## [0.1.9] — 2026-05-08
+
+### Fixed
+- **Carrier ml-based input** — replaces the previous percentage-based input. Each carrier shows ml directly. Eliminates the `100 / 3 = 33.333%` rounding bug where the input displayed `33%` but the QuantityTable showed `34%` (calculator's `sumCarrierPct` renormalisation drift), and the "should sum to 100%" warning would never clear when editing one carrier and back.
+- `lib/blend-calculator.ts` — `IngredientInput.volumeMl?: number` added; carrier branch uses it directly. `BlendCalculation.carrierVolumeMl` is now the actual sum of carrier ml (so drift is visible). The `sumCarrierPct` renormalisation is gone — calculator output and right-column input always agree.
+- **Drift warning + Fit to Volume** — when carrier sum drifts more than 0.5 ml from the chosen Volume, an inline hint shows `X ml over Volume` or `X ml unallocated` with a one-click **Fit to Volume** button that scales all carriers proportionally back to the target.
+- **Volume change scales carriers** — clicking a Volume preset or entering a custom volume rescales existing carriers proportionally (preserves ratios).
+- **`<QuantityTable>` consistency** — carrier rows show `—` in the `%` column (percentage no longer the user's mental model for carriers); footer total ml = real sum of `volumeMl` (was hardcoded `100%`).
+- **Page loader** — `app/blend/page.tsx` passes saved `BlendIngredient.volumeMl` straight through; dropped the percentage-normalisation block.
+- **BlendScaler** — accepts optional `volumeMl` per carrier ingredient and scales it by `viewVolumeMl / originalVolumeMl`; detail page passes through the carrier ml.
+
+## [0.1.8] — 2026-05-08
+
+### Added
+- **Multi-carrier blends** — pick more than one carrier oil per blend (e.g. 50 ml jojoba + 50 ml sweet almond). Default split is even (1 → 100%, 2 → 50/50, 3 → 33/33/33); adjustable per carrier.
+- **Additive carrier model** — replaces the previous "carrier reduces by EO volume" model. The chosen Volume is the carrier volume target; essential oils add on top. A 100 ml blend at 3% dilution is now 100 ml carrier + 3 ml EO = 103 ml final. Matches standard aromatherapy practice.
+- **"Final mix: X ml" hint** under the Volume row showing `carrier + essentials` total.
+- **"Next →" button** on Section 1 — replaces the auto-advance to Section 2 that fired on first carrier selection. Lets users curate their full carrier list before moving on.
+- `BlendCalculation.finalVolumeMl` field exposed by `lib/blend-calculator.ts`.
+- **Confirmed (no code change)**: carrier↔carrier and carrier↔EO pairings already feed `scoreBlend` equally — `fetchPairings` sends every selected ID, `scoreBlend` weights all ratings the same regardless of oil type. Multi-carriers contribute to the rating.
+
+### Changed
+- `BlendBuilder` `selectedCarriers` is now an array of `{ oil, percentagePct }` (later changed to `{ oil, volumeMl }` in v0.1.9). `addCarrier` / `removeCarrier` / `updateCarrierPct` mirror the existing EO helpers.
+- Section 1 picker uses the same 2-column grid + card layout as Section 2 (was 3-column with a different card style); cards toggle add/remove with selected highlight.
+- Page loader normalises carrier percentages so old (single-carrier ~97%) and new (50/50) saved blends both initialise correctly.
+
+## [0.1.7] — 2026-05-07
+
+### Added
+- **Accordion sections** in the blend builder — Sections 1 and 2 are independently collapsible. Selecting a carrier auto-collapses Section 1 and opens Section 2.
+- **Search/Browse mode for the carrier picker** — matches the EO picker's existing toggle; carrier picker now uses the same 2-column card layout as EOs.
+- **iOS-style sliding toggle** for the EO `% / drops` input mode (later removed in v0.1.10 in favour of drops-only).
+
+### Changed
+- Touch-friendly improvements across the blend builder: bigger Volume / Dilution preset buttons (`py-2` → `py-2 px-3 text-sm`), enlarged ✕ remove buttons (`p-1.5 rounded-full` ~32 px tap target), `py-1.5` height on EO percentage / drops inputs.
+- Removed the per-card ⓘ info toggle on carrier and EO browse cards.
+
+## [0.1.6] — 2026-05-07
+
+### Added
+- **AI Quick-Add for oils** — `/admin/oils/new` accepts just oil name + type and uses Claude to generate the full profile for review before saving. Only shown when `ANTHROPIC_API_KEY` is set.
+- **Manual add fallback** — `/admin/oils/new/manual` always available; admin landing page now shows two buttons: `+ Add with AI` (when key set) and `+ Add Manually` (always).
+- **Mobile oil-info toggle** — ⓘ button on carrier and browse-mode EO cards expands description, benefits, and properties inline (later removed in v0.1.7 along with the accordion refactor).
+
+## [0.1.5] — 2026-05-07
+
+### Added
+- **Aromatherapy glossary** at `/about/glossary` — 42 terms across Therapeutic Properties, Carrier Oil Properties, Fatty Acids & Chemistry, and Blending & Safety. Linked from the About page.
+- **Drops input mode** for essential oils — toggle in the right column switches the per-EO input between percentage and drop-count. Updating drops back-calculates dilution rate.
+- **Display rounding** — QuantityTable `%` column rounds to whole numbers (`<1%` for tiny EO values), `ml` column drops to 1 dp; "1 ml ≈ 20 drops" footer note.
+- **/ship slash command** — automates commit → tag → push workflow; later updated to use `gh run watch` for pipeline monitoring.
+
+## [0.1.4] — 2026-05-04
+
+### Fixed
+- Compatibility matrix sticky column bleed-through (proper fix this time).
+
+## [0.1.3] — 2026-05-04
+
+### Fixed
+- Essential oil percentage normalization on add/remove.
+- Blend expiry note wording on saved-blend pages.
+- Compatibility matrix sticky column bleed-through (first attempt).
+
+## [0.1.2] — 2026-05-04
+
+### Added
+- **Hide premature blend grade** — the `<CompatibilityPanel>` no longer renders an "A — Excellent Blend" badge before any oil is selected (`hasBlend` guard).
+- **Reset button** — clears all blend builder state in one click; visible only when something is selected.
+- **"Build from this blend"** — link on saved-blend detail pages that pre-populates the builder with the same carrier, EOs, volume, and dilution. Uses a `?from=<id>` URL param.
+- **Volume scaler on saved-blend detail page** — `<BlendScaler>` lets the user adjust the view volume; all displayed quantities recalculate proportionally without mutating the saved blend.
+
+## [0.1.1] — 2026-05-04
+
+### Added
+- Admin oil search.
+- CI bumped to Node 24.
+
+### Fixed
+- Clear enrichment backfill so re-enriching is genuinely idempotent.
+
 ## [0.1.0] — 2026-05-06
 
 ### Added
@@ -162,7 +256,17 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.10...HEAD
+[0.1.10]: https://github.com/tfindley/oil-blender/compare/v0.1.9...v0.1.10
+[0.1.9]: https://github.com/tfindley/oil-blender/compare/v0.1.8...v0.1.9
+[0.1.8]: https://github.com/tfindley/oil-blender/compare/v0.1.7...v0.1.8
+[0.1.7]: https://github.com/tfindley/oil-blender/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/tfindley/oil-blender/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/tfindley/oil-blender/compare/v0.1.4...v0.1.5
+[0.1.4]: https://github.com/tfindley/oil-blender/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/tfindley/oil-blender/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/tfindley/oil-blender/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/tfindley/oil-blender/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/tfindley/oil-blender/compare/v0.0.13...v0.1.0
 [0.0.13]: https://github.com/tfindley/oil-blender/compare/v0.0.12...v0.0.13
 [0.0.12]: https://github.com/tfindley/oil-blender/compare/v0.0.11...v0.0.12

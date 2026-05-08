@@ -23,7 +23,15 @@ export interface BlendCalculation {
 }
 
 // 1 ml ≈ 20 drops for essential oils
-const DROPS_PER_ML = 20
+export const DROPS_PER_ML = 20
+
+export function pctToDrops(percentagePct: number, totalVolumeMl: number): number {
+  return Math.round((percentagePct / 100) * totalVolumeMl * DROPS_PER_ML)
+}
+
+export function dropsToPct(drops: number, totalVolumeMl: number): number {
+  return (drops / DROPS_PER_ML / totalVolumeMl) * 100
+}
 
 export function calculateBlend(
   totalVolumeMl: number,

@@ -7,6 +7,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Where things live
 
 - `app/admin/` — admin panel; auth via `middleware.ts` + `ADMIN_SECRET` cookie. `layout.tsx` provides the shared nav (self-suppresses on `/admin/login` via `usePathname`).
+- `components/blend/` — blend builder UI:
+  - `BlendBuilder.tsx` — top-level builder; owns all blend state, picker open-section, and save flow
+  - `OilPicker.tsx` — shared accordion picker used for both carriers (Section 1) and essential oils (Section 2). Identical highlight-toggle behaviour; props are `oils`, `selectedOils`, `noun`, `maxCount`, etc.
+  - `SelectedIngredientRow.tsx` — shared right-column row for an in-blend ingredient (`unit: 'ml' | 'drops'`)
+  - `QuantityTable.tsx` — read-only summary table; carriers show `—` in `%` (ml is source of truth there)
+  - `BlendScaler.tsx` — saved-blend volume rescaler on the detail page
+- `lib/blend-calculator.ts` — pure math + types for `calculateBlend`. Exports `DROPS_PER_ML`, `pctToDrops`, `dropsToPct`. Carrier ingredients pass `volumeMl` directly; the calculator no longer renormalises by `sumCarrierPct`.
 - `lib/pairing-utils.ts` — pairing helpers (`sortPairingIds`, `pairingKey`, `buildPairingMap`).
 - `lib/oil-enrichment.ts` — Claude-backed enrichment helper (prompt caching + truncation retry baked in); exports `ENRICHMENT_MODEL`.
 - `lib/format-time.ts` — `relativeTime(date)` helper used across admin pages.
@@ -23,6 +30,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **DB-backed pages need `export const dynamic = 'force-dynamic'`** — `next build` runs without a database.
 - **`revalidatePath('/admin/oils/[id]')` does NOT expand `[id]`.** Pass the resolved path: `` revalidatePath(`/admin/oils/${id}`) ``.
 - **Anthropic prompt caching:** `cache_control: { type: 'ephemeral' }` goes on the LAST cacheable text block; the dynamic suffix follows it uncached.
+- **Blend volume model is additive** — `totalVolumeMl` (the user's "Volume" input) is the **carrier volume target**, not the final mix volume. EOs add on top: `finalVolumeMl = carrierVolumeMl + totalVolumeMl × dilutionRate`. The carrier is locked at the chosen volume; this matches aromatherapy practice.
+- **Carrier ingredients use `volumeMl` directly** — `BlendIngredient.volumeMl` is the source of truth for carriers (not derived from `percentagePct`). EO ingredients still use `percentagePct` (drops are derived via `pctToDrops`). When loading saved blends into the builder, pass `volumeMl` through unchanged.
+- **`@@unique([blendId, oilId])`** on `BlendIngredient` blocks the same oil appearing twice in one blend — that's intentional. Multiple *different* carriers (or EOs) are fine.
 - **No test suite.** Verification = `npx tsc --noEmit` plus running the dev server.
 
 # Common commands

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { OilSummary, PairingRating, BlendGrade } from '@/types'
-import { calculateBlend } from '@/lib/blend-calculator'
+import { calculateBlend, dropsToPct, pctToDrops } from '@/lib/blend-calculator'
 import { scoreBlend } from '@/lib/blend-scorer'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
@@ -12,6 +12,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { CompatibilityPanel } from './CompatibilityPanel'
 import { QuantityTable } from './QuantityTable'
 import { OilPicker } from './OilPicker'
+import { SelectedIngredientRow } from './SelectedIngredientRow'
 
 const VOLUME_PRESETS = [10, 30, 50, 100, 200]
 const DILUTION_PRESETS = [
@@ -22,6 +23,11 @@ const DILUTION_PRESETS = [
 ]
 const MAX_CARRIERS = 5
 const MAX_EOS = 5
+const MIN_DILUTION_RATE = 0.001  // 0.1% — floor for displayed/saved dilution
+
+function dilutionFromEOs(eos: { percentagePct: number }[]): number {
+  return Math.max(MIN_DILUTION_RATE, eos.reduce((s, e) => s + e.percentagePct, 0) / 100)
+}
 
 interface SelectedEO {
   oil: OilSummary
@@ -68,7 +74,6 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const [saveError, setSaveError] = useState('')
   const [eoSearch, setEoSearch] = useState('')
   const [eoMode, setEoMode] = useState<'search' | 'browse'>('search')
-  const [eoInputMode, setEoInputMode] = useState<'pct' | 'drops'>('pct')
   const [carrierSearch, setCarrierSearch] = useState('')
   const [carrierMode, setCarrierMode] = useState<'search' | 'browse'>('search')
   const [openSection, setOpenSection] = useState<1 | 2>(initialBlend?.carriers && initialBlend.carriers.length > 0 ? 2 : 1)
@@ -89,12 +94,6 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const score = scoreBlend(pairings)
   const hasBlend = selectedCarriers.length > 0 && selectedEOs.length > 0
 
-  const carrierSubtitle =
-    openSection === 1 ? 'The base that delivers the blend to your skin. Pick one or more.'
-    : selectedCarriers.length === 0 ? 'None selected'
-    : selectedCarriers.length <= 2 ? selectedCarriers.map((c) => c.oil.name).join(' + ')
-    : `${selectedCarriers.length} carriers`
-
   function handleReset() {
     setSelectedCarriers([])
     setSelectedEOs([])
@@ -108,7 +107,6 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     setAvoidAcknowledged(false)
     setEoSearch('')
     setEoMode('search')
-    setEoInputMode('pct')
     setCarrierSearch('')
     setCarrierMode('search')
     setOpenSection(1)
@@ -186,55 +184,23 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     if (selectedEOs.length >= MAX_EOS) return
     setEoSearch('')
     setAvoidAcknowledged(false)
-    if (eoInputMode === 'drops') {
-      const pct = (1 / 20 / totalVolumeMl) * 100
-      const newEOs = [...selectedEOs, { oil, percentagePct: pct }]
-      setSelectedEOs(newEOs)
-      setDilutionRate(newEOs.reduce((s, e) => s + e.percentagePct, 0) / 100)
-    } else {
-      const newCount = selectedEOs.length + 1
-      const pctEach = (dilutionRate * 100) / newCount
-      setSelectedEOs([
-        ...selectedEOs.map((e) => ({ ...e, percentagePct: pctEach })),
-        { oil, percentagePct: pctEach },
-      ])
-    }
+    const newEOs = [...selectedEOs, { oil, percentagePct: dropsToPct(1, totalVolumeMl) }]
+    setSelectedEOs(newEOs)
+    setDilutionRate(dilutionFromEOs(newEOs))
   }
 
   function removeEO(id: string) {
     setAvoidAcknowledged(false)
     const next = selectedEOs.filter((e) => e.oil.id !== id)
-    if (eoInputMode === 'drops') {
-      setSelectedEOs(next)
-      setDilutionRate(Math.max(0.001, next.reduce((s, e) => s + e.percentagePct, 0) / 100))
-    } else if (next.length > 0) {
-      const pctEach = (dilutionRate * 100) / next.length
-      setSelectedEOs(next.map((e) => ({ ...e, percentagePct: pctEach })))
-    } else {
-      setSelectedEOs([])
-    }
-  }
-
-  function updatePct(id: string, pct: number) {
-    setSelectedEOs(selectedEOs.map((e) => (e.oil.id === id ? { ...e, percentagePct: pct } : e)))
+    setSelectedEOs(next)
+    setDilutionRate(dilutionFromEOs(next))
   }
 
   function updateDrops(id: string, drops: number) {
-    const pct = (Math.max(1, drops) / 20 / totalVolumeMl) * 100
+    const pct = dropsToPct(Math.max(1, drops), totalVolumeMl)
     const newEOs = selectedEOs.map((e) => (e.oil.id === id ? { ...e, percentagePct: pct } : e))
     setSelectedEOs(newEOs)
-    setDilutionRate(Math.max(0.001, newEOs.reduce((s, e) => s + e.percentagePct, 0) / 100))
-  }
-
-  function normalizePercentages() {
-    const sum = selectedEOs.reduce((s, e) => s + e.percentagePct, 0)
-    const target = dilutionRate * 100
-    if (sum <= 0) {
-      const pctEach = target / selectedEOs.length
-      setSelectedEOs(selectedEOs.map((e) => ({ ...e, percentagePct: pctEach })))
-    } else {
-      setSelectedEOs(selectedEOs.map((e) => ({ ...e, percentagePct: (e.percentagePct / sum) * target })))
-    }
+    setDilutionRate(dilutionFromEOs(newEOs))
   }
 
   const selectedIds = new Set([
@@ -252,25 +218,18 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     return unsafePartner.get(oil.id)
   }
 
-  const selectedCarrierIdSet = new Set(selectedCarriers.map((c) => c.oil.id))
-  const selectedEOIdSet = new Set(selectedEOs.map((e) => e.oil.id))
+  const selectedCarrierOils = selectedCarriers.map((c) => c.oil)
+  const selectedEOOils = selectedEOs.map((e) => e.oil)
 
   function toggleCarrier(oil: OilSummary) {
-    if (selectedCarrierIdSet.has(oil.id)) removeCarrier(oil.id)
+    if (selectedCarriers.some((c) => c.oil.id === oil.id)) removeCarrier(oil.id)
     else addCarrier(oil)
   }
 
   function toggleEO(oil: OilSummary) {
-    if (selectedEOIdSet.has(oil.id)) removeEO(oil.id)
+    if (selectedEOs.some((e) => e.oil.id === oil.id)) removeEO(oil.id)
     else addEO(oil)
   }
-
-  const eoSubtitle =
-    openSection === 2
-      ? selectedEOs.length === 0 ? 'Select up to 5 essential oils.' : `${selectedEOs.length} of 5 selected.`
-      : selectedEOs.length === 0 ? 'None selected'
-      : selectedEOs.length <= 2 ? selectedEOs.map((e) => e.oil.name).join(' + ')
-      : `${selectedEOs.length} essentials`
 
   const canSave =
     selectedCarriers.length > 0 &&
@@ -324,11 +283,10 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
         {/* Step 1: Carrier */}
         <OilPicker
           title="1. Choose Your Carrier Oils"
-          subtitle={carrierSubtitle}
+          noun="carriers"
           oils={carriers}
-          selectedIds={selectedCarrierIdSet}
+          selectedOils={selectedCarrierOils}
           maxCount={MAX_CARRIERS}
-          maxReachedNoun="carriers"
           findUnsafe={findUnsafePairing}
           onToggle={toggleCarrier}
           isOpen={openSection === 1}
@@ -352,12 +310,11 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
 
         {/* Step 2: Essential Oil picker */}
         <OilPicker
-          title="2. Add Essential Oils"
-          subtitle={eoSubtitle}
+          title="2. Choose Your Essential Oils"
+          noun="essential oils"
           oils={essentials}
-          selectedIds={selectedEOIdSet}
+          selectedOils={selectedEOOils}
           maxCount={MAX_EOS}
-          maxReachedNoun="essential oils"
           findUnsafe={findUnsafePairing}
           onToggle={toggleEO}
           isOpen={openSection === 2}
@@ -408,36 +365,23 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
             {/* Carriers */}
             <div>
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                Carrier Oils {selectedCarriers.length > 1 && `(${selectedCarriers.length})`}
+                Carrier Oils {selectedCarriers.length > 0 && `(${selectedCarriers.length}/${MAX_CARRIERS})`}
               </p>
               {selectedCarriers.length === 0 ? (
                 <p className="text-sm italic text-stone-400 dark:text-stone-500">None selected</p>
               ) : (
                 <div className="space-y-1.5">
                   {selectedCarriers.map((c) => (
-                    <div key={c.oil.id} className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-950/40">
-                      <div className="min-w-0 flex-1">
-                        <span className="text-sm font-medium text-amber-900 dark:text-amber-200">{c.oil.name}</span>
-                        <span className="ml-1.5 text-[10px] italic text-amber-600 dark:text-amber-500">{c.oil.botanicalName}</span>
-                      </div>
-                      <input
-                        type="number"
-                        min={0}
-                        max={500}
-                        step={1}
-                        value={Math.round(c.volumeMl)}
-                        onChange={(ev) => updateCarrierMl(c.oil.id, parseFloat(ev.target.value) || 0)}
-                        className="w-16 rounded border border-amber-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100"
-                      />
-                      <span className="text-xs text-amber-600 dark:text-amber-500">ml</span>
-                      <button
-                        onClick={() => removeCarrier(c.oil.id)}
-                        className="-mr-1 rounded-full p-1.5 text-amber-400 hover:bg-red-50 hover:text-red-500 dark:text-amber-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-                        aria-label={`Remove ${c.oil.name}`}
-                      >
-                        ✕
-                      </button>
-                    </div>
+                    <SelectedIngredientRow
+                      key={c.oil.id}
+                      name={c.oil.name}
+                      botanicalName={c.oil.botanicalName}
+                      value={Math.round(c.volumeMl)}
+                      unit="ml"
+                      onChange={(v) => updateCarrierMl(c.oil.id, v)}
+                      onRemove={() => removeCarrier(c.oil.id)}
+                      removeAriaLabel={`Remove ${c.oil.name}`}
+                    />
                   ))}
                 </div>
               )}
@@ -457,87 +401,28 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
 
             {/* Essential oils */}
             <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                  Essential Oils {selectedEOs.length > 0 && `(${selectedEOs.length}/5)`}
-                </p>
-                {selectedEOs.length > 0 && (
-                  <button
-                    onClick={() => setEoInputMode((m) => m === 'pct' ? 'drops' : 'pct')}
-                    className="relative flex h-8 w-28 shrink-0 items-center rounded-full bg-stone-100 p-0.5 text-xs font-medium dark:bg-stone-700"
-                    aria-label={`Switch to ${eoInputMode === 'pct' ? 'drops' : 'percentage'} input`}
-                  >
-                    <span
-                      aria-hidden
-                      className={`absolute inset-y-0.5 rounded-full bg-amber-700 transition-all duration-200 ${
-                        eoInputMode === 'pct' ? 'left-0.5 right-[50%]' : 'left-[50%] right-0.5'
-                      }`}
-                    />
-                    <span className={`relative z-10 flex-1 text-center transition-colors ${eoInputMode === 'pct' ? 'text-white' : 'text-stone-500 dark:text-stone-400'}`}>%</span>
-                    <span className={`relative z-10 flex-1 text-center transition-colors ${eoInputMode === 'drops' ? 'text-white' : 'text-stone-500 dark:text-stone-400'}`}>drops</span>
-                  </button>
-                )}
-              </div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                Essential Oils {selectedEOs.length > 0 && `(${selectedEOs.length}/${MAX_EOS})`}
+              </p>
               {selectedEOs.length === 0 ? (
                 <p className="text-sm italic text-stone-400 dark:text-stone-500">None selected</p>
               ) : (
                 <div className="space-y-1.5">
-                  {selectedEOs.map((e) => {
-                    const dropCount = Math.round(e.percentagePct / 100 * totalVolumeMl * 20)
-                    return (
-                      <div key={e.oil.id} className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-600 dark:bg-stone-700">
-                        <div className="min-w-0 flex-1">
-                          <span className="text-sm font-medium text-stone-800 dark:text-stone-100">{e.oil.name}</span>
-                          <span className="ml-1.5 text-[10px] italic text-stone-400 dark:text-stone-500">{e.oil.botanicalName}</span>
-                        </div>
-                        {eoInputMode === 'pct' ? (
-                          <>
-                            <input
-                              type="number"
-                              min={0.1}
-                              max={5}
-                              step={0.1}
-                              value={e.percentagePct.toFixed(1)}
-                              onChange={(ev) => updatePct(e.oil.id, parseFloat(ev.target.value) || 0)}
-                              className="w-14 rounded border border-stone-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
-                            />
-                            <span className="text-xs text-stone-400 dark:text-stone-500">%</span>
-                          </>
-                        ) : (
-                          <>
-                            <input
-                              type="number"
-                              min={1}
-                              max={100}
-                              step={1}
-                              value={dropCount}
-                              onChange={(ev) => updateDrops(e.oil.id, parseInt(ev.target.value, 10) || 1)}
-                              className="w-14 rounded border border-stone-300 bg-white px-1.5 py-1.5 text-right text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100"
-                            />
-                            <span className="text-xs text-stone-400 dark:text-stone-500">drops</span>
-                          </>
-                        )}
-                        <button
-                          onClick={() => removeEO(e.oil.id)}
-                          className="-mr-1 rounded-full p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 dark:text-stone-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-                          aria-label={`Remove ${e.oil.name}`}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )
-                  })}
+                  {selectedEOs.map((e) => (
+                    <SelectedIngredientRow
+                      key={e.oil.id}
+                      name={e.oil.name}
+                      botanicalName={e.oil.botanicalName}
+                      value={pctToDrops(e.percentagePct, totalVolumeMl)}
+                      unit="drops"
+                      onChange={(v) => updateDrops(e.oil.id, v)}
+                      onRemove={() => removeEO(e.oil.id)}
+                      removeAriaLabel={`Remove ${e.oil.name}`}
+                    />
+                  ))}
                 </div>
               )}
-              {eoInputMode === 'pct' && selectedEOs.length > 0 && Math.abs(selectedEOs.reduce((s, e) => s + e.percentagePct, 0) - dilutionRate * 100) > 0.1 && (
-                <button
-                  onClick={normalizePercentages}
-                  className="mt-1 inline-block py-1 text-xs text-amber-700 hover:underline dark:text-amber-500"
-                >
-                  Percentages don't sum to {(dilutionRate * 100).toFixed(1)}% — normalize
-                </button>
-              )}
-              {eoInputMode === 'drops' && selectedEOs.length > 0 && (
+              {selectedEOs.length > 0 && (
                 <p className="mt-1.5 text-[10px] text-stone-400 dark:text-stone-500">
                   Dilution set automatically from drops (1 ml = 20 drops)
                 </p>
@@ -658,7 +543,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
               </Button>
 
               {selectedCarriers.length === 0 && (
-                <p className="text-center text-xs text-stone-400 dark:text-stone-500">Choose a carrier oil to get started.</p>
+                <p className="text-center text-xs text-stone-400 dark:text-stone-500">Choose at least one carrier oil to get started.</p>
               )}
             </div>
           </CardBody>

@@ -105,12 +105,17 @@ export default async function Home() {
               {
                 icon: '⚗️',
                 title: 'Smart Compatibility Scoring',
-                body: 'Every combination is graded A–F. CAUTION and AVOID pairings are flagged with plain-English explanations. Genuinely unsafe combinations are blocked.',
+                body: 'Every combination is graded A–F — carrier↔carrier, carrier↔EO, and EO↔EO pairings all factor in. CAUTION and AVOID pairings are flagged with plain-English explanations. Genuinely unsafe combinations are blocked.',
+              },
+              {
+                icon: '🧪',
+                title: 'Multi-Carrier Blending',
+                body: 'Mix up to 5 carrier oils — say 50 ml jojoba + 50 ml sweet almond. Each carrier is set in millilitres directly with a drift warning if your sum doesn’t match the target volume.',
               },
               {
                 icon: '📐',
                 title: 'Precise Quantities',
-                body: 'Choose your batch volume (10–200ml) and dilution rate. Get exact millilitres and drop counts for every oil in your blend.',
+                body: 'Carriers in millilitres, essential oils in drops. The chosen volume is your carrier volume; EOs add on top, so 100 ml @ 3% dilution gives 100 ml carrier + 3 ml EO = 103 ml final mix.',
               },
               {
                 icon: '📄',

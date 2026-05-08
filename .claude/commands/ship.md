@@ -15,15 +15,17 @@ Ship the current branch: commit any uncommitted changes, apply the next patch-ve
    ```
    to find the latest release tag and increment the patch number (e.g. `v0.1.6` → `v0.1.7`).
 
-4. **Tag**: `git tag -a <version> -m "Release <version>"`
+4. **Bump `package.json` version**: edit `package.json` so `"version"` matches the new tag *without* the `v` prefix (e.g. tag `v0.1.11` → `"version": "0.1.11"`). The About page reads this for the displayed version. If the file is already at the target value (e.g. you bumped it manually before invoking `/ship`), skip this step. Stage and amend the commit from step 2 — *or*, if step 2 was a no-op (clean tree), commit the bump on its own with a message like `chore: bump version to <version>`. Either way the version bump must be in HEAD before tagging.
 
-5. **Push branch and tag**:
+5. **Tag**: `git tag -a <version> -m "Release <version>"`
+
+6. **Push branch and tag**:
    ```
    git push origin main --follow-tags
    ```
    This pushes both the branch and the new tag in one step. The tag push triggers the GitHub Actions workflow (`.github/workflows/release.yml`).
 
-6. **Watch the pipeline**: get the triggered run ID and watch it:
+7. **Watch the pipeline**: get the triggered run ID and watch it:
    ```
    gh run watch $(gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
    ```

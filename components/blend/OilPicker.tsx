@@ -13,11 +13,10 @@ export interface PickerPairing {
 
 interface OilPickerProps {
   title: string
-  subtitle: string
+  noun: string
   oils: OilSummary[]
-  selectedIds: Set<string>
+  selectedOils: OilSummary[]
   maxCount: number
-  maxReachedNoun: string
   findUnsafe: (oil: OilSummary) => PickerPairing | undefined
   onToggle: (oil: OilSummary) => void
 
@@ -32,13 +31,20 @@ interface OilPickerProps {
   footer?: ReactNode
 }
 
+function buildSubtitle(selected: OilSummary[], maxCount: number, noun: string, isOpen: boolean): string {
+  const n = selected.length
+  if (isOpen) return n === 0 ? `Select up to ${maxCount} ${noun}.` : `${n} of ${maxCount} selected`
+  if (n === 0) return 'None selected'
+  if (n <= 2) return selected.map((s) => s.name).join(' + ')
+  return `${n} ${noun}`
+}
+
 export function OilPicker({
   title,
-  subtitle,
+  noun,
   oils,
-  selectedIds,
+  selectedOils,
   maxCount,
-  maxReachedNoun,
   findUnsafe,
   onToggle,
   isOpen,
@@ -49,6 +55,8 @@ export function OilPicker({
   onSearchChange,
   footer,
 }: OilPickerProps) {
+  const selectedIds = new Set(selectedOils.map((o) => o.id))
+  const subtitle = buildSubtitle(selectedOils, maxCount, noun, isOpen)
   const filtered = oils.filter((o) =>
     !searchValue ||
     o.name.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -107,7 +115,7 @@ export function OilPicker({
         <CardBody className="space-y-3">
           {atMax && (
             <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500 dark:bg-stone-700 dark:text-stone-400">
-              Maximum {maxCount} {maxReachedNoun} reached — deselect one to add another.
+              Maximum {maxCount} {noun} reached — deselect one to add another.
             </p>
           )}
 
