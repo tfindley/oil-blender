@@ -12,7 +12,8 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { CompatibilityPanel } from './CompatibilityPanel'
 import { QuantityTable } from './QuantityTable'
 import { OilPicker } from './OilPicker'
-import { SelectedIngredientRow } from './SelectedIngredientRow'
+import { NumberStepper } from './NumberStepper'
+import { SelectedOilsCard } from './SelectedOilsCard'
 
 const VOLUME_PRESETS = [10, 30, 50, 100, 200]
 const DILUTION_PRESETS = [
@@ -48,6 +49,15 @@ interface Pairing {
   reason: string
 }
 
+type Tab = 1 | 2 | 3 | 4
+
+interface TabSpec {
+  id: Tab
+  shortLabel: string
+  fullLabel: string
+  badge?: number
+}
+
 interface BlendBuilderProps {
   carriers: OilSummary[]
   essentials: OilSummary[]
@@ -76,7 +86,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const [eoMode, setEoMode] = useState<'search' | 'browse'>('search')
   const [carrierSearch, setCarrierSearch] = useState('')
   const [carrierMode, setCarrierMode] = useState<'search' | 'browse'>('search')
-  const [openSection, setOpenSection] = useState<1 | 2>(initialBlend?.carriers && initialBlend.carriers.length > 0 ? 2 : 1)
+  const [activeTab, setActiveTab] = useState<Tab>(initialBlend?.carriers && initialBlend.carriers.length > 0 ? 3 : 1)
   const [avoidAcknowledged, setAvoidAcknowledged] = useState(false)
 
   const fetchPairings = useCallback(async (ids: string[]) => {
@@ -109,7 +119,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     setEoMode('search')
     setCarrierSearch('')
     setCarrierMode('search')
-    setOpenSection(1)
+    setActiveTab(1)
   }
 
   const ingredientInputs = [
@@ -276,230 +286,451 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     }
   }
 
+  const tabs: TabSpec[] = [
+    { id: 1, shortLabel: '1. Carriers', fullLabel: '1. Choose Your Carrier Oils', badge: selectedCarriers.length || undefined },
+    { id: 2, shortLabel: '2. Essentials', fullLabel: '2. Choose Your Essential Oils', badge: selectedEOs.length || undefined },
+    { id: 3, shortLabel: '3. Quantities', fullLabel: '3. Set Your Quantities' },
+    { id: 4, shortLabel: '4. Save', fullLabel: '4. Save Blend' },
+  ]
+  const activeTabSpec = tabs.find((t) => t.id === activeTab)!
+  const hasAnyOil = selectedCarriers.length > 0 || selectedEOs.length > 0
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-      {/* ── Left column: oil pickers ── */}
-      <div className="space-y-6 lg:col-span-2">
-
-        {/* Step 1: Carrier */}
-        <OilPicker
-          title="1. Choose Your Carrier Oils"
-          noun="carriers"
-          oils={carriers}
-          selectedOils={selectedCarrierOils}
-          maxCount={MAX_CARRIERS}
-          findUnsafe={findUnsafePairing}
-          onToggle={toggleCarrier}
-          isOpen={openSection === 1}
-          onOpen={() => setOpenSection(1)}
-          mode={carrierMode}
-          onModeChange={setCarrierMode}
-          searchValue={carrierSearch}
-          onSearchChange={setCarrierSearch}
-          footer={
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() => setOpenSection(2)}
-                disabled={selectedCarriers.length === 0}
-                className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Next →
-              </button>
-            </div>
-          }
-        />
-
-        {/* Step 2: Essential Oil picker */}
-        <OilPicker
-          title="2. Choose Your Essential Oils"
-          noun="essential oils"
-          oils={essentials}
-          selectedOils={selectedEOOils}
-          maxCount={MAX_EOS}
-          findUnsafe={findUnsafePairing}
-          onToggle={toggleEO}
-          isOpen={openSection === 2}
-          onOpen={() => setOpenSection(2)}
-          mode={eoMode}
-          onModeChange={setEoMode}
-          searchValue={eoSearch}
-          onSearchChange={setEoSearch}
-        />
-
-        {/* Merged Quantities card — Volume / Dilution / per-oil dilution alerts / editable lists / read-only summary */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Quantities</h2>
-              {(selectedCarriers.length > 0 || selectedEOs.length > 0) && (
-                <button
-                  onClick={handleReset}
-                  className="rounded px-3 py-1.5 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
-                >
-                  Reset
-                </button>
+      {/* ── Left column / full-width on mobile: tabs ── */}
+      <div className="lg:col-span-2 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto">
+        {/* Tab strip */}
+        <div className="flex items-stretch border-b border-stone-200 dark:border-stone-700">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`relative flex-1 sm:flex-none px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium transition-colors -mb-px border-b-2 ${
+                activeTab === t.id
+                  ? 'border-amber-500 text-amber-700 dark:text-amber-500'
+                  : 'border-transparent text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
+              }`}
+            >
+              <span className="hidden sm:inline">{t.fullLabel}</span>
+              <span className="sm:hidden">{t.shortLabel}</span>
+              {t.badge != null && t.badge > 0 && (
+                <span className="ml-1.5 inline-block rounded-full bg-amber-700 px-1.5 py-0.5 text-[10px] leading-none text-white">{t.badge}</span>
               )}
-            </div>
-          </CardHeader>
-          <CardBody className="space-y-4">
+            </button>
+          ))}
+          {hasAnyOil && (
+            <button
+              onClick={handleReset}
+              className="ml-auto self-center px-3 py-1.5 text-xs text-stone-500 hover:text-red-600 dark:text-stone-400 dark:hover:text-red-400"
+            >
+              Reset
+            </button>
+          )}
+        </div>
 
-            {/* Volume */}
-            <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Volume</p>
-              <div className="flex flex-wrap gap-1.5">
-                {VOLUME_PRESETS.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => { changeVolume(v); setCustomVolume('') }}
-                    className={`rounded border px-3 py-2 text-sm transition-all ${
-                      totalVolumeMl === v && !customVolume
-                        ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
-                    }`}
-                  >
-                    {v} ml
-                  </button>
-                ))}
-                <input
-                  type="number"
-                  placeholder="Custom"
-                  value={customVolume}
-                  min={5}
-                  max={500}
-                  onChange={(e) => {
-                    setCustomVolume(e.target.value)
-                    const v = parseInt(e.target.value)
-                    if (v >= 5) changeVolume(v)
-                  }}
-                  className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
-                />
-              </div>
-            </div>
-
-            {/* Dilution */}
-            <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Dilution</p>
-              <div className="flex flex-wrap gap-1.5">
-                {DILUTION_PRESETS.map((d) => (
-                  <button
-                    key={d.value}
-                    onClick={() => setDilutionRate(d.value)}
-                    className={`rounded border px-3 py-2 text-left text-xs transition-all ${
-                      dilutionRate === d.value
-                        ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                        : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
-                    }`}
-                  >
-                    <span className="font-medium">{d.label}</span>
-                    <span className="ml-1 text-stone-400 dark:text-stone-500">{d.sublabel}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
-                Final mix: {calc.finalVolumeMl.toFixed(1)} ml
-                ({calc.carrierVolumeMl.toFixed(1)} ml carrier + {calc.essentialOilTotalMl.toFixed(1)} ml essentials)
-              </p>
-            </div>
-
-            {/* Per-oil dilution warnings (also shown in Compatibility card) */}
-            {calc.warnings.length > 0 && (
-              <div className="space-y-2">
-                {calc.warnings.map((w, i) => (
-                  <Alert key={i} variant="caution">{w}</Alert>
-                ))}
-              </div>
-            )}
-
-            {/* Carriers */}
-            <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                Carrier Oils {selectedCarriers.length > 0 && `(${selectedCarriers.length}/${MAX_CARRIERS})`}
-              </p>
-              {selectedCarriers.length === 0 ? (
-                <p className="text-sm italic text-stone-400 dark:text-stone-500">None selected</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {selectedCarriers.map((c) => (
-                    <SelectedIngredientRow
-                      key={c.oil.id}
-                      name={c.oil.name}
-                      botanicalName={c.oil.botanicalName}
-                      value={Math.round(c.volumeMl)}
-                      unit="ml"
-                      onChange={(v) => updateCarrierMl(c.oil.id, v)}
-                      onRemove={() => removeCarrier(c.oil.id)}
-                      removeAriaLabel={`Remove ${c.oil.name}`}
-                    />
-                  ))}
-                </div>
-              )}
-              {selectedCarriers.length > 0 && Math.abs(carrierDrift) >= 0.5 && (
-                <div className="mt-1 flex items-center gap-2 text-[10px] text-amber-700 dark:text-amber-500">
-                  <span>
-                    {carrierDrift > 0
-                      ? `${carrierDrift.toFixed(0)} ml over Volume`
-                      : `${(-carrierDrift).toFixed(0)} ml unallocated`}
-                  </span>
-                  <button onClick={fitCarriersToVolume} className="underline hover:no-underline">
-                    Fit to Volume
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Essential oils */}
-            <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                Essential Oils {selectedEOs.length > 0 && `(${selectedEOs.length}/${MAX_EOS})`}
-              </p>
-              {selectedEOs.length === 0 ? (
-                <p className="text-sm italic text-stone-400 dark:text-stone-500">None selected</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {selectedEOs.map((e) => (
-                    <SelectedIngredientRow
-                      key={e.oil.id}
-                      name={e.oil.name}
-                      botanicalName={e.oil.botanicalName}
-                      value={pctToDrops(e.percentagePct, totalVolumeMl)}
-                      unit="drops"
-                      onChange={(v) => updateDrops(e.oil.id, v)}
-                      onRemove={() => removeEO(e.oil.id)}
-                      removeAriaLabel={`Remove ${e.oil.name}`}
-                      over={calcByOilId.get(e.oil.id)?.overMaxDilution ?? false}
-                    />
-                  ))}
-                </div>
-              )}
-              {selectedEOs.length > 0 && (
-                <p className="mt-1.5 text-[10px] text-stone-400 dark:text-stone-500">
-                  Dilution set automatically from drops (1 ml = 20 drops)
+        {/* Tab content */}
+        <div className="mt-4">
+          {/* Tab 1 — Carriers */}
+          {activeTab === 1 && (
+            <div className="space-y-3">
+              <div>
+                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">{activeTabSpec.fullLabel}</h2>
+                <p className="text-sm text-stone-500 dark:text-stone-400">
+                  {selectedCarriers.length === 0
+                    ? `Select up to ${MAX_CARRIERS} carriers.`
+                    : `${selectedCarriers.length} of ${MAX_CARRIERS} selected`}
                 </p>
-              )}
-            </div>
-
-            {/* Read-only summary table */}
-            {calc.ingredients.length > 0 && (
-              <div className="border-t border-stone-100 pt-3 dark:border-stone-700">
-                <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
               </div>
-            )}
+              <OilPicker
+                noun="carriers"
+                oils={carriers}
+                selectedOils={selectedCarrierOils}
+                maxCount={MAX_CARRIERS}
+                findUnsafe={findUnsafePairing}
+                onToggle={toggleCarrier}
+                mode={carrierMode}
+                onModeChange={setCarrierMode}
+                searchValue={carrierSearch}
+                onSearchChange={setCarrierSearch}
+                footer={
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => setActiveTab(2)}
+                      disabled={selectedCarriers.length === 0}
+                      className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                }
+              />
+            </div>
+          )}
 
-          </CardBody>
-        </Card>
+          {/* Tab 2 — Essentials */}
+          {activeTab === 2 && (
+            <div className="space-y-3">
+              <div>
+                <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">{activeTabSpec.fullLabel}</h2>
+                <p className="text-sm text-stone-500 dark:text-stone-400">
+                  {selectedEOs.length === 0
+                    ? `Select up to ${MAX_EOS} essential oils.`
+                    : `${selectedEOs.length} of ${MAX_EOS} selected`}
+                </p>
+              </div>
+              <OilPicker
+                noun="essential oils"
+                oils={essentials}
+                selectedOils={selectedEOOils}
+                maxCount={MAX_EOS}
+                findUnsafe={findUnsafePairing}
+                onToggle={toggleEO}
+                mode={eoMode}
+                onModeChange={setEoMode}
+                searchValue={eoSearch}
+                onSearchChange={setEoSearch}
+                footer={
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => setActiveTab(3)}
+                      disabled={selectedEOs.length === 0}
+                      className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                }
+              />
+            </div>
+          )}
+
+          {/* Tab 3 — Quantities */}
+          {activeTab === 3 && (
+            <div className="space-y-5">
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">{activeTabSpec.fullLabel}</h2>
+
+              {/* Volume */}
+              <div>
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Volume</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {VOLUME_PRESETS.map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => { changeVolume(v); setCustomVolume('') }}
+                      className={`rounded border px-3 py-2 text-sm transition-all ${
+                        totalVolumeMl === v && !customVolume
+                          ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                          : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
+                      }`}
+                    >
+                      {v} ml
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    placeholder="Custom"
+                    value={customVolume}
+                    min={5}
+                    max={500}
+                    onChange={(e) => {
+                      setCustomVolume(e.target.value)
+                      const v = parseInt(e.target.value)
+                      if (v >= 5) changeVolume(v)
+                    }}
+                    className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
+                  />
+                </div>
+              </div>
+
+              {/* Dilution */}
+              <div>
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Dilution</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {DILUTION_PRESETS.map((d) => (
+                    <button
+                      key={d.value}
+                      onClick={() => setDilutionRate(d.value)}
+                      className={`rounded border px-3 py-2 text-left text-xs transition-all ${
+                        dilutionRate === d.value
+                          ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                          : 'border-stone-200 text-stone-500 hover:border-amber-300 dark:border-stone-600 dark:text-stone-400 dark:hover:border-amber-500'
+                      }`}
+                    >
+                      <span className="font-medium">{d.label}</span>
+                      <span className="ml-1 text-stone-400 dark:text-stone-500">{d.sublabel}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
+                  Final mix: {calc.finalVolumeMl.toFixed(1)} ml
+                  ({calc.carrierVolumeMl.toFixed(1)} ml carrier + {calc.essentialOilTotalMl.toFixed(1)} ml essentials)
+                </p>
+              </div>
+
+              {/* Per-oil dilution warnings */}
+              {calc.warnings.length > 0 && (
+                <div className="space-y-2">
+                  {calc.warnings.map((w, i) => (
+                    <Alert key={i} variant="caution">{w}</Alert>
+                  ))}
+                </div>
+              )}
+
+              {/* Carriers table */}
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                  Carrier Oils {selectedCarriers.length > 0 && `(${selectedCarriers.length}/${MAX_CARRIERS})`}
+                </p>
+                {selectedCarriers.length === 0 ? (
+                  <p className="text-sm italic text-stone-400 dark:text-stone-500">
+                    None selected — go to{' '}
+                    <button onClick={() => setActiveTab(1)} className="text-amber-700 underline hover:no-underline dark:text-amber-500">
+                      Carriers
+                    </button>{' '}to add some.
+                  </p>
+                ) : (
+                  <div className="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700">
+                    <table className="w-full text-sm">
+                      <thead className="bg-stone-50 dark:bg-stone-800">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-stone-600 dark:text-stone-300">Oil</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-stone-600 dark:text-stone-300">ml</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-stone-600 dark:text-stone-300">ratio</th>
+                          <th className="px-3 py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
+                        {selectedCarriers.map((c) => {
+                          const ratio = carrierSum > 0
+                            ? Math.round((c.volumeMl / carrierSum) * 100)
+                            : null
+                          return (
+                            <tr key={c.oil.id}>
+                              <td className="px-3 py-2 text-stone-800 dark:text-stone-100">
+                                <div className="font-medium">{c.oil.name}</div>
+                                <div className="text-[10px] italic text-stone-400 dark:text-stone-500">{c.oil.botanicalName}</div>
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                <NumberStepper
+                                  value={Math.round(c.volumeMl)}
+                                  min={0}
+                                  max={500}
+                                  onChange={(v) => updateCarrierMl(c.oil.id, v)}
+                                  ariaLabel={`${c.oil.name} ml`}
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono text-stone-600 dark:text-stone-300">
+                                {ratio == null ? '—' : `${ratio}%`}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                <button
+                                  onClick={() => removeCarrier(c.oil.id)}
+                                  className="rounded-full p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 dark:text-stone-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                                  aria-label={`Remove ${c.oil.name}`}
+                                >
+                                  ✕
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                      <tfoot className="border-t border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800">
+                        <tr>
+                          <td className="px-3 py-2 font-medium text-stone-700 dark:text-stone-200">Total</td>
+                          <td className={`px-3 py-2 text-right font-mono font-medium ${
+                            Math.abs(carrierDrift) >= 0.5
+                              ? carrierDrift > 0 ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-500'
+                              : 'text-stone-700 dark:text-stone-200'
+                          }`}>
+                            {carrierSum.toFixed(0)} ml
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium text-stone-700 dark:text-stone-200">
+                            {carrierSum > 0 ? '100%' : '—'}
+                          </td>
+                          <td className="px-3 py-2"></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+                {selectedCarriers.length > 0 && Math.abs(carrierDrift) >= 0.5 && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-500">
+                    <span>
+                      {carrierDrift > 0
+                        ? `${carrierDrift.toFixed(0)} ml over Volume`
+                        : `${(-carrierDrift).toFixed(0)} ml unallocated`}
+                    </span>
+                    <button onClick={fitCarriersToVolume} className="underline hover:no-underline">
+                      Fit to Volume
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* EOs table */}
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                  Essential Oils {selectedEOs.length > 0 && `(${selectedEOs.length}/${MAX_EOS})`}
+                </p>
+                {selectedEOs.length === 0 ? (
+                  <p className="text-sm italic text-stone-400 dark:text-stone-500">
+                    None selected — go to{' '}
+                    <button onClick={() => setActiveTab(2)} className="text-amber-700 underline hover:no-underline dark:text-amber-500">
+                      Essentials
+                    </button>{' '}to add some.
+                  </p>
+                ) : (
+                  <div className="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700">
+                    <table className="w-full text-sm">
+                      <thead className="bg-stone-50 dark:bg-stone-800">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-stone-600 dark:text-stone-300">Oil</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-stone-600 dark:text-stone-300">drops</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-stone-600 dark:text-stone-300">ml</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-stone-600 dark:text-stone-300">%</th>
+                          <th className="px-3 py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
+                        {selectedEOs.map((e) => {
+                          const calcEntry = calcByOilId.get(e.oil.id)
+                          const drops = pctToDrops(e.percentagePct, totalVolumeMl)
+                          const volMl = calcEntry?.volumeMl ?? 0
+                          const over = calcEntry?.overMaxDilution ?? false
+                          const pct = totalVolumeMl > 0 ? (volMl / totalVolumeMl) * 100 : 0
+                          const pctDisplay = pct < 1 ? '<1%' : `${pct.toFixed(1)}%`
+                          const rowClass = over
+                            ? 'bg-red-50/50 dark:bg-red-950/20'
+                            : ''
+                          const numClass = over ? 'text-red-700 dark:text-red-400' : 'text-stone-600 dark:text-stone-300'
+                          return (
+                            <tr key={e.oil.id} className={rowClass}>
+                              <td className={`px-3 py-2 ${over ? 'text-red-800 dark:text-red-300' : 'text-stone-800 dark:text-stone-100'}`}>
+                                <div className="font-medium">{e.oil.name}</div>
+                                <div className="text-[10px] italic text-stone-400 dark:text-stone-500">{e.oil.botanicalName}</div>
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                <NumberStepper
+                                  value={drops}
+                                  min={1}
+                                  max={100}
+                                  onChange={(v) => updateDrops(e.oil.id, v)}
+                                  over={over}
+                                  ariaLabel={`${e.oil.name} drops`}
+                                />
+                              </td>
+                              <td className={`px-3 py-2 text-right font-mono ${numClass}`}>{volMl.toFixed(1)}</td>
+                              <td className={`px-3 py-2 text-right font-mono ${numClass}`}>{pctDisplay}</td>
+                              <td className="px-3 py-2 text-right">
+                                <button
+                                  onClick={() => removeEO(e.oil.id)}
+                                  className="rounded-full p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 dark:text-stone-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                                  aria-label={`Remove ${e.oil.name}`}
+                                >
+                                  ✕
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                      <tfoot className="border-t border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800">
+                        <tr>
+                          <td className="px-3 py-2 font-medium text-stone-700 dark:text-stone-200">Total</td>
+                          <td className="px-3 py-2 text-right font-mono font-medium text-stone-700 dark:text-stone-200">
+                            {selectedEOs.reduce((s, e) => s + pctToDrops(e.percentagePct, totalVolumeMl), 0)}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono font-medium text-stone-700 dark:text-stone-200">
+                            {calc.essentialOilTotalMl.toFixed(1)}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono font-medium text-stone-700 dark:text-stone-200">
+                            {(dilutionRate * 100).toFixed(1)}%
+                          </td>
+                          <td className="px-3 py-2"></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+                {selectedEOs.length > 0 && (
+                  <p className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
+                    Dilution set automatically from drops (1 ml = 20 drops)
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setActiveTab(4)}
+                  disabled={!hasBlend}
+                  className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 4 — Save */}
+          {activeTab === 4 && (
+            <div className="space-y-4">
+              <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">{activeTabSpec.fullLabel}</h2>
+
+              {calc.ingredients.length > 0 && (
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Recipe summary</p>
+                  <QuantityTable ingredients={calc.ingredients} totalVolumeMl={totalVolumeMl} />
+                </div>
+              )}
+
+              <div className="space-y-3 border-t border-stone-100 pt-4 dark:border-stone-700">
+                <Input
+                  label="Name your blend"
+                  placeholder="e.g. Evening Calm"
+                  value={blendName}
+                  onChange={(e) => setBlendName(e.target.value)}
+                />
+
+                <Textarea
+                  label="Notes (optional)"
+                  rows={3}
+                  placeholder="Intended use, application method, personal notes…"
+                  value={blendNotes}
+                  onChange={(e) => setBlendNotes(e.target.value)}
+                />
+
+                {saveError && <Alert variant="unsafe">{saveError}</Alert>}
+
+                <Button
+                  className="w-full"
+                  onClick={handleSave}
+                  disabled={!canSave || saving}
+                >
+                  {saving ? 'Saving…' : 'Save & Get Recipe Card'}
+                </Button>
+
+                {!hasBlend && (
+                  <p className="text-center text-xs text-stone-400 dark:text-stone-500">
+                    Add at least one carrier and one essential oil to save your blend.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Right column: compatibility + save ── */}
+      {/* ── Right column on desktop / below on mobile: selected oils + compatibility ── */}
       <div className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:pr-0.5">
+        <SelectedOilsCard carriers={selectedCarrierOils} essentials={selectedEOOils} />
 
-        {/* Compatibility */}
         <Card>
           <CardHeader>
             <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Compatibility</h2>
           </CardHeader>
           <CardBody className="space-y-4">
-            {/* Hard stops + warnings at the top so users see the blockers first */}
             {unsafePairings.length > 0 && (
               <Alert variant="unsafe" title="Unsafe combination">
                 This blend cannot be saved. Remove the conflicting oils.
@@ -523,43 +754,6 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
             ))}
 
             {hasBlend && <CompatibilityPanel grade={score.grade} summary={score.summary} pairings={pairings} />}
-          </CardBody>
-        </Card>
-
-        {/* Save Blend */}
-        <Card>
-          <CardHeader>
-            <h2 className="font-serif text-lg font-semibold text-stone-800 dark:text-stone-200">Save Blend</h2>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <Input
-              label="Name your blend"
-              placeholder="e.g. Evening Calm"
-              value={blendName}
-              onChange={(e) => setBlendName(e.target.value)}
-            />
-
-            <Textarea
-              label="Notes (optional)"
-              rows={3}
-              placeholder="Intended use, application method, personal notes…"
-              value={blendNotes}
-              onChange={(e) => setBlendNotes(e.target.value)}
-            />
-
-            {saveError && <Alert variant="unsafe">{saveError}</Alert>}
-
-            <Button
-              className="w-full"
-              onClick={handleSave}
-              disabled={!canSave || saving}
-            >
-              {saving ? 'Saving…' : 'Save & Get Recipe Card'}
-            </Button>
-
-            {selectedCarriers.length === 0 && (
-              <p className="text-center text-xs text-stone-400 dark:text-stone-500">Choose at least one carrier oil to get started.</p>
-            )}
           </CardBody>
         </Card>
       </div>
