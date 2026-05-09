@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { pairingKey } from '@/lib/pairing-utils'
 import { useDragScroll } from '@/lib/use-drag-scroll'
@@ -21,11 +21,28 @@ interface PairingData {
 }
 
 interface TooltipState {
-  x: number
-  y: number
+  top: number
+  left: number
   rowOil: Oil
   colOil: Oil
   pairing: PairingData | null
+}
+
+const TOOLTIP_W = 288 // matches max-w-72
+const TOOLTIP_H_EST = 130
+const VIEWPORT_MARGIN = 8
+
+function placeTooltip(rect: DOMRect): { top: number; left: number } {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  let top = rect.bottom + VIEWPORT_MARGIN
+  if (top + TOOLTIP_H_EST > vh - VIEWPORT_MARGIN) {
+    top = rect.top - TOOLTIP_H_EST - VIEWPORT_MARGIN
+  }
+  top = Math.max(VIEWPORT_MARGIN, Math.min(top, vh - TOOLTIP_H_EST - VIEWPORT_MARGIN))
+  let left = rect.left + rect.width / 2 - TOOLTIP_W / 2
+  left = Math.max(VIEWPORT_MARGIN, Math.min(left, vw - TOOLTIP_W - VIEWPORT_MARGIN))
+  return { top, left }
 }
 
 interface Props {
@@ -53,6 +70,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
   const [rowSearch, setRowSearch] = useState('')
   const [colSearch, setColSearch] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
   useDragScroll(scrollRef)
 
   const typeFilteredOils = filter === 'all' ? oils : oils.filter((o) => o.type === filter)
@@ -75,17 +93,36 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
       : typeFilteredOils
   }, [typeFilteredOils, colSearch])
 
-  const handleMouseEnter = useCallback(
-    (e: React.MouseEvent, row: Oil, col: Oil) => {
+  const showTooltip = useCallback(
+    (e: React.SyntheticEvent<HTMLElement>, row: Oil, col: Oil) => {
+      const rect = e.currentTarget.getBoundingClientRect()
       const key = pairingKey(row.id, col.id)
-      setTooltip({ x: e.clientX, y: e.clientY, rowOil: row, colOil: col, pairing: pairingMap[key] ?? null })
+      setTooltip({ ...placeTooltip(rect), rowOil: row, colOil: col, pairing: pairingMap[key] ?? null })
     },
     [pairingMap],
   )
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setTooltip((prev) => (prev ? { ...prev, x: e.clientX, y: e.clientY } : null))
-  }, [])
+  // Dismiss tooltip on tap-outside (mobile) and on scroll (rect would be stale).
+  useEffect(() => {
+    if (!tooltip) return
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node
+      if (tooltipRef.current?.contains(target)) return
+      if (scrollRef.current?.contains(target)) return
+      setTooltip(null)
+    }
+    const dismiss = () => setTooltip(null)
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('touchstart', handleOutside)
+    window.addEventListener('scroll', dismiss, true)
+    window.addEventListener('resize', dismiss)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
+      window.removeEventListener('scroll', dismiss, true)
+      window.removeEventListener('resize', dismiss)
+    }
+  }, [tooltip])
 
   const toggleRow = useCallback((id: string) => setSelectedRow((p) => (p === id ? null : id)), [])
   const toggleCol = useCallback((id: string) => setSelectedCol((p) => (p === id ? null : id)), [])
@@ -93,7 +130,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
   const hasAxisFilters = rowSearch || colSearch || selectedRow || selectedCol
 
   return (
-    <div onMouseMove={handleMouseMove} onMouseLeave={() => setTooltip(null)}>
+    <div onMouseLeave={() => setTooltip(null)}>
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 md:hidden">
         Rotate to landscape for the best matrix experience.
       </div>
@@ -280,7 +317,8 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
                         key={col.id}
                         className={`relative z-0 cursor-pointer transition-colors hover:brightness-95 ${cellBg}`}
                         style={{ width: 30, height: 30 }}
-                        onMouseEnter={(e) => handleMouseEnter(e, row, col)}
+                        onMouseEnter={(e) => showTooltip(e, row, col)}
+                        onClick={(e) => showTooltip(e, row, col)}
                       >
                         <div className="flex h-full items-center justify-center">
                           <span
@@ -303,16 +341,18 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
       {/* ── Tooltip ───────────────────────────────────────────────────── */}
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-50 max-w-72 rounded-lg border border-stone-200 bg-white p-3 shadow-xl dark:border-stone-700 dark:bg-stone-800"
-          style={{
-            left: Math.min(
-              tooltip.x + 14,
-              typeof window !== 'undefined' ? window.innerWidth - 300 : tooltip.x + 14,
-            ),
-            top: tooltip.y - 8,
-          }}
+          ref={tooltipRef}
+          className="fixed z-50 w-72 rounded-lg border border-stone-200 bg-white p-3 shadow-xl dark:border-stone-700 dark:bg-stone-800"
+          style={{ top: tooltip.top, left: tooltip.left }}
         >
-          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+          <button
+            onClick={() => setTooltip(null)}
+            aria-label="Close"
+            className="absolute right-1.5 top-1.5 rounded-full p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-700 dark:hover:text-stone-200 md:hidden"
+          >
+            ✕
+          </button>
+          <p className="pr-6 text-sm font-semibold text-stone-900 dark:text-stone-100">
             {tooltip.rowOil.name} &times; {tooltip.colOil.name}
           </p>
           {tooltip.pairing ? (

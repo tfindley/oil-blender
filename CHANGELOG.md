@@ -4,6 +4,16 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.1.19] — 2026-05-09
+
+### Fixed
+- **`<BlendBuilder>` now reacts to external draft changes** — removing an oil from the `<BlendCart>` dropdown while on `/blend` no longer leaves the builder's tabs / "In Your Blend" card / Quantities table stale. New listener subscribes to `DRAFT_CHANGE_EVENT` and re-syncs `selectedCarriers` / `selectedEOs` from localStorage when the oil-set membership differs from the builder's own state. Idempotent — auto-saves don't trigger redundant work because the keys match.
+- **Compatibility-matrix tooltip is mobile-aware** — was clamped only on the X-axis and used mouse coords, so tapping a dot near the bottom of the viewport pushed the card off-screen with no way to see it. New behaviour:
+  - Tooltip is pinned to the cell's bounding rect and clamped to both X and Y; prefers placing the card below the cell, flips above when it would overflow the bottom; horizontally centred over the cell, clamped to viewport edges with an 8 px margin.
+  - Tap-to-show on cells (added `onClick` alongside `onMouseEnter`); tap-outside dismisses; close `✕` button on mobile.
+  - Auto-dismiss on scroll (capture-phase) and resize so a stale rect can't leave the card floating.
+  - `pointer-events-auto` (was `none`) so the card and its close button are interactive on touch.
+
 ## [0.1.18] — 2026-05-09
 
 ### Changed
@@ -356,7 +366,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.18...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.19...HEAD
+[0.1.19]: https://github.com/tfindley/oil-blender/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/tfindley/oil-blender/compare/v0.1.17...v0.1.18
 [0.1.17]: https://github.com/tfindley/oil-blender/compare/v0.1.16...v0.1.17
 [0.1.16]: https://github.com/tfindley/oil-blender/compare/v0.1.15...v0.1.16

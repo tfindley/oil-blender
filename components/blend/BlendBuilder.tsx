@@ -14,7 +14,7 @@ import { QuantityTable } from './QuantityTable'
 import { OilPicker } from './OilPicker'
 import { NumberStepper } from './NumberStepper'
 import { SelectedOilsCard } from './SelectedOilsCard'
-import { loadDraft, saveDraft, clearDraft } from '@/lib/blend-storage'
+import { loadDraft, saveDraft, clearDraft, DRAFT_CHANGE_EVENT } from '@/lib/blend-storage'
 import { isScorable, isSavable } from '@/lib/blend-rules'
 
 const VOLUME_PRESETS = [10, 30, 50, 100, 200]
@@ -170,6 +170,54 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
     setHydrated(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Sync external draft changes (e.g. the BlendCart removing an oil) into builder state.
+  // We only re-sync when the oil-set membership actually differs — our own auto-saves
+  // produce identical sets, so this is a no-op for them.
+  useEffect(() => {
+    if (!hydrated) return
+    const handler = () => {
+      const draft = loadDraft()
+      const builderKey = [
+        ...selectedCarriers.map((c) => c.oil.id),
+        ...selectedEOs.map((e) => e.oil.id),
+      ].sort().join(',')
+      const draftKey = draft
+        ? [
+            ...draft.carriers.map((c) => c.oilId),
+            ...draft.essentials.map((e) => e.oilId),
+          ].sort().join(',')
+        : ''
+      if (builderKey === draftKey) return
+      if (!draft) {
+        setSelectedCarriers([])
+        setSelectedEOs([])
+        return
+      }
+      setSelectedCarriers(
+        draft.carriers
+          .map((c) => {
+            const oil = carriers.find((o) => o.id === c.oilId)
+            return oil ? { oil, volumeMl: c.volumeMl } : null
+          })
+          .filter((c): c is { oil: OilSummary; volumeMl: number } => c != null)
+      )
+      setSelectedEOs(
+        draft.essentials
+          .map((e) => {
+            const oil = essentials.find((o) => o.id === e.oilId)
+            return oil ? { oil, percentagePct: e.percentagePct } : null
+          })
+          .filter((e): e is { oil: OilSummary; percentagePct: number } => e != null)
+      )
+    }
+    window.addEventListener(DRAFT_CHANGE_EVENT, handler)
+    window.addEventListener('storage', handler)
+    return () => {
+      window.removeEventListener(DRAFT_CHANGE_EVENT, handler)
+      window.removeEventListener('storage', handler)
+    }
+  }, [hydrated, selectedCarriers, selectedEOs, carriers, essentials])
 
   const score = scoreBlend(pairings)
   const hasBlend = isScorable(selectedCarriers.length, selectedEOs.length)
