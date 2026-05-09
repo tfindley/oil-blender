@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { OilCompare } from '@/components/oils/OilCompare'
 import { buildPairingMap } from '@/lib/pairing-utils'
+import { getSettings } from '@/lib/settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,7 @@ export default async function ComparePage() {
   ])
 
   const pairingMap = buildPairingMap(pairings)
+  const { tooltipsEnabled } = await getSettings()
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -55,7 +57,7 @@ export default async function ComparePage() {
         </Link>
       </div>
 
-      <OilCompare oils={oils} pairingMap={pairingMap} />
+      <OilCompare oils={oils} pairingMap={pairingMap} tooltipsEnabled={tooltipsEnabled} />
     </div>
   )
 }

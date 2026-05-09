@@ -4,6 +4,24 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-05-09
+
+### Added
+- **Admin Settings page** at `/admin/settings` with toggles for "Help tooltips" (site-wide hint banners) and "Footer issue-reporting link" (the "Report it on GitHub" line). New `Settings` Prisma model — single-row, keyed by `id="singleton"`. New `lib/settings.ts` exposes `getSettings()` (cached per-request via `React.cache`) and `updateSettings()`. Settings link added to the admin nav.
+- **`<HelpTooltip>`** generic hint banner (`components/ui/HelpTooltip.tsx`) with three independent off-switches: admin master kill (`siteEnabled`), per-page interaction signal (`interacted` — auto-dismisses when the user starts using the tool), and per-browser ✕-dismiss persistence in localStorage. Replaces the old `FirstVisitHint` (deleted).
+- **Help tooltip on `/oils/compare`** below the slot selectors, explaining how to compare two oils. Auto-dismisses when either slot is filled.
+- **Live search on the Oil Library** — `/oils` now filters as you type. New client component `components/oils/OilLibrary.tsx` owns search/type-filter state and renders results via `useMemo`. URL `?q=` and `?type=` still seed initial state for shareable filter links.
+
+### Changed
+- **`<BlendBuilder>`** — `<FirstVisitHint />` replaced by `<HelpTooltip id="blend-builder">`. Auto-dismisses when the user picks any oil OR moves off Tab 1. Admin-toggleable.
+- **Footer** is now an async server component reading `getSettings()` to conditionally render the GitHub-issues line.
+
+### Performance
+- `getSettings()` does a `findUnique` first and only `create`s the row if it's missing, instead of upserting on every call. Wrapped in `React.cache()` so multiple callers within the same request (Footer + page) share one DB hit.
+
+### Database
+- New migration `20260509000000_settings_singleton` creates the `Settings` table. Auto-applied on Docker container start; for local dev, run `node scripts/migrate.js` once.
+
 ## [0.2.0] — 2026-05-09
 
 Public-launch hardening pass: a publicly-reachable site needs more than localhost-grade security. This release closes 7 Dependabot advisories, adds a security-headers baseline (HSTS + CSP report-only), rate-limits both the public save endpoint and the admin login, decouples the admin cookie from `ADMIN_SECRET`, and ships a few class-trial-ready UX touches (homepage stats, admin blend search, first-visit hint).
@@ -390,7 +408,8 @@ Public-launch hardening pass: a publicly-reachable site needs more than localhos
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/tfindley/oil-blender/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/tfindley/oil-blender/compare/v0.1.19...v0.2.0
 [0.1.19]: https://github.com/tfindley/oil-blender/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/tfindley/oil-blender/compare/v0.1.17...v0.1.18

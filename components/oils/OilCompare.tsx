@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { pairingKey } from '@/lib/pairing-utils'
 import { loadCompare, saveCompare, COMPARE_CHANGE_EVENT } from '@/lib/compare-storage'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 type Rating = 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE'
 type OilType = 'ESSENTIAL' | 'CARRIER'
@@ -31,6 +32,7 @@ interface PairingData {
 interface Props {
   oils: DetailedOil[]
   pairingMap: Record<string, PairingData>
+  tooltipsEnabled?: boolean
 }
 
 const RATINGS: Record<Rating, { label: string; dot: string; text: string; bg: string; border: string }> = {
@@ -428,7 +430,7 @@ function OilSlotPlaceholder({ side }: { side: 'A' | 'B' }) {
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export function OilCompare({ oils, pairingMap }: Props) {
+export function OilCompare({ oils, pairingMap, tooltipsEnabled = true }: Props) {
   const [aId, setAId] = useState<string | null>(null)
   const [bId, setBId] = useState<string | null>(null)
   const [hydrated, setHydrated] = useState(false)
@@ -496,6 +498,17 @@ export function OilCompare({ oils, pairingMap }: Props) {
         </div>
         <SlotSelector side="B" oils={oils} selectedOil={oilB} onSelect={setBId} />
       </div>
+
+      <HelpTooltip
+        id="oil-compare"
+        siteEnabled={tooltipsEnabled}
+        interacted={Boolean(aId || bId)}
+      >
+        <p className="font-semibold text-amber-900 dark:text-amber-200">How this works</p>
+        <p className="mt-0.5 text-amber-800 dark:text-amber-300">
+          Pick an oil for slot A and slot B — you&apos;ll see their full profiles and a compatibility verdict (Excellent → Unsafe). Use ⇄ to swap, or click a slot again to change it.
+        </p>
+      </HelpTooltip>
 
       {sameOilSelected ? (
         <div className="py-16 text-center text-stone-400 dark:text-stone-500">

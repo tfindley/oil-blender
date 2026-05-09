@@ -14,7 +14,7 @@ import { QuantityTable } from './QuantityTable'
 import { OilPicker } from './OilPicker'
 import { NumberStepper } from './NumberStepper'
 import { SelectedOilsCard } from './SelectedOilsCard'
-import { FirstVisitHint } from './FirstVisitHint'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { loadDraft, saveDraft, clearDraft, DRAFT_CHANGE_EVENT } from '@/lib/blend-storage'
 import { isScorable, isSavable } from '@/lib/blend-rules'
 
@@ -71,9 +71,10 @@ interface BlendBuilderProps {
     dilutionRate: number
   }
   pendingOilId?: string
+  tooltipsEnabled?: boolean
 }
 
-export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId }: BlendBuilderProps) {
+export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId, tooltipsEnabled = true }: BlendBuilderProps) {
   const router = useRouter()
 
   const [selectedCarriers, setSelectedCarriers] = useState<SelectedCarrier[]>(initialBlend?.carriers ?? [])
@@ -458,7 +459,16 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
 
       {/* ── Left column / full-width on mobile: tabs ── */}
       <div className="lg:col-span-2">
-        <FirstVisitHint />
+        <HelpTooltip
+          id="blend-builder"
+          siteEnabled={tooltipsEnabled}
+          interacted={selectedCarriers.length > 0 || selectedEOs.length > 0 || activeTab !== 1}
+        >
+          <p className="font-semibold text-amber-900 dark:text-amber-200">New here?</p>
+          <p className="mt-0.5 text-amber-800 dark:text-amber-300">
+            Pick a carrier oil on Tab 1, an essential oil on Tab 2, then jump to Quantities. Tap any oil to see its profile.
+          </p>
+        </HelpTooltip>
         {/* Tab strip */}
         <div className="flex items-stretch border-b border-stone-200 dark:border-stone-700">
           {tabs.map((t) => (

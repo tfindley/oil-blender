@@ -1,4 +1,8 @@
-export function Footer() {
+import { getSettings } from '@/lib/settings'
+
+export async function Footer() {
+  const { issueReportingEnabled } = await getSettings()
+
   return (
     <footer className="mt-auto border-t border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-900">
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -7,17 +11,19 @@ export function Footer() {
           <p className="font-serif text-stone-700 dark:text-stone-300">{process.env.NEXT_PUBLIC_SITE_NAME || 'Oil Blender'}</p>
           <p>Always patch test. Essential oils are potent — use with care.</p>
           <p className="text-xs">Not medical advice. Consult a professional for therapeutic use.</p>
-          <p className="text-xs">
-            Found a problem?{' '}
-            <a
-              href="https://github.com/tfindley/oil-blender/issues/new"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-amber-700 hover:underline dark:text-amber-500"
-            >
-              Report it on GitHub
-            </a>
-          </p>
+          {issueReportingEnabled && (
+            <p className="text-xs">
+              Found a problem?{' '}
+              <a
+                href="https://github.com/tfindley/oil-blender/issues/new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-amber-700 hover:underline dark:text-amber-500"
+              >
+                Report it on GitHub
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </footer>

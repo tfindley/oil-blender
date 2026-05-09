@@ -95,3 +95,11 @@ model BlendIngredient {
 
   @@unique([blendId, oilId])
 }
+
+// Single-row site settings. Always upserted/read via id="singleton".
+model Settings {
+  id                    String   @id @default("singleton")
+  tooltipsEnabled       Boolean  @default(true)
+  issueReportingEnabled Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+}

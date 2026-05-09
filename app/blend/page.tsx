@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { BlendBuilder } from '@/components/blend/BlendBuilder'
+import { getSettings } from '@/lib/settings'
 import type { OilSummary } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -24,6 +25,7 @@ const OIL_SELECT = {
 
 export default async function BlendPage({ searchParams }: { searchParams: Promise<{ from?: string; oil?: string }> }) {
   const { from, oil: pendingOilId } = await searchParams
+  const { tooltipsEnabled } = await getSettings()
 
   const [oils, fromBlendData] = await Promise.all([
     prisma.oil.findMany({ select: OIL_SELECT, orderBy: { name: 'asc' } }),
@@ -89,7 +91,7 @@ export default async function BlendPage({ searchParams }: { searchParams: Promis
           Choose your carrier oils, add essential oils, and see your compatibility score in real time.
         </p>
       </div>
-      <BlendBuilder carriers={carriers} essentials={essentials} initialBlend={initialBlend} pendingOilId={pendingOilId} />
+      <BlendBuilder carriers={carriers} essentials={essentials} initialBlend={initialBlend} pendingOilId={pendingOilId} tooltipsEnabled={tooltipsEnabled} />
     </div>
   )
 }
