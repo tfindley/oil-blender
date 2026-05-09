@@ -71,7 +71,7 @@ export function CompatibilityPanel({ grade, summary, pairings }: CompatibilityPa
       )}
 
       {pairings.length === 0 && (
-        <p className="text-sm italic text-stone-400 dark:text-stone-500">Add a carrier and at least one essential oil to see compatibility.</p>
+        <p className="text-sm italic text-stone-400 dark:text-stone-500">No pairing data on record for this combination.</p>
       )}
     </div>
   )

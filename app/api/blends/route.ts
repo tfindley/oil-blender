@@ -31,15 +31,27 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data
 
-  // Server-side UNSAFE check
   const oilIds = data.ingredients.map((i) => i.oilId)
-  const unsafePairings = await prisma.oilPairing.findMany({
-    where: {
-      rating: 'UNSAFE',
-      oilAId: { in: oilIds },
-      oilBId: { in: oilIds },
-    },
-  })
+
+  const [carrierCount, unsafePairings] = await Promise.all([
+    prisma.oil.count({
+      where: { id: { in: oilIds }, type: 'CARRIER' },
+    }),
+    prisma.oilPairing.findMany({
+      where: {
+        rating: 'UNSAFE',
+        oilAId: { in: oilIds },
+        oilBId: { in: oilIds },
+      },
+    }),
+  ])
+
+  if (carrierCount === 0) {
+    return NextResponse.json(
+      { error: 'Blend must include at least one carrier oil.' },
+      { status: 422 }
+    )
+  }
 
   const actualUnsafe = unsafePairings.filter(
     (p) => oilIds.includes(p.oilAId) && oilIds.includes(p.oilBId)

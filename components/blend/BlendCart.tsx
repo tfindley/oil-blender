@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { loadDraft, saveDraft, removeFromDraft, DRAFT_CHANGE_EVENT, type BlendDraft } from '@/lib/blend-storage'
 import { scoreBlend, type BlendGrade, type ScoredPairing } from '@/lib/blend-scorer'
 import { GRADE_STYLES } from '@/lib/grade-styles'
+import { isScorable } from '@/lib/blend-rules'
 
 function GradeCircle({ grade }: { grade: BlendGrade }) {
   return (
@@ -78,7 +79,7 @@ export function BlendCart() {
     if (pathname === '/blend') return
     const current = loadDraft()
     if (!current) return
-    if (current.carriers.length === 0 || current.essentials.length === 0) {
+    if (!isScorable(current.carriers.length, current.essentials.length)) {
       if (current.grade !== undefined) saveDraft({ ...current, grade: undefined })
       return
     }
@@ -116,6 +117,13 @@ export function BlendCart() {
   const essentials = draft?.essentials ?? []
   const total = carriers.length + essentials.length
   const filled = mounted && total > 0
+
+  // Force the dropdown closed when the first oil arrives — it should only open on explicit click.
+  const prevTotal = useRef(0)
+  useEffect(() => {
+    if (prevTotal.current === 0 && total > 0) setOpen(false)
+    prevTotal.current = total
+  }, [total])
 
   const buttonClass = `relative flex items-center justify-center rounded-md p-2.5 transition-colors ${
     filled

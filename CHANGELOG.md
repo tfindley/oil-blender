@@ -4,6 +4,18 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.1.18] — 2026-05-09
+
+### Changed
+- **Compatibility panel renders for any 2+ oils** (was: required at least one carrier *and* one essential oil). Carrier-only blends now score and can be saved (e.g. 50/50 jojoba + sweet almond as a base oil); EO-only combinations score so users can see the rating but cannot be saved.
+- **New `lib/blend-rules.ts`** — single source for the gating predicates: `isScorable(c, e)` (≥ 2 oils, any types) and `isSavable(c, e)` (≥ 2 oils with ≥ 1 carrier). Adopted by `<BlendBuilder>`, `<BlendCart>`, and `/api/blends`.
+- **`<CompatibilityPanel>` empty-state copy** corrected — was "Add a carrier and at least one essential oil to see compatibility" (misleading; rendered even when oils were present but had no recorded pairings). Now: "No pairing data on record for this combination."
+- **`<BlendCart>` dropdown can no longer auto-open** — defensive guard force-closes the panel on the 0 → positive oil-count transition. The dropdown only opens on explicit click.
+
+### Security / Server
+- `POST /api/blends` rejects EO-only blends server-side (`Blend must include at least one carrier oil.`) — matches the new client rule.
+- Carrier-count check and UNSAFE-pairings query parallelised with `Promise.all` (saves one DB roundtrip per save).
+
 ## [0.1.17] — 2026-05-09
 
 ### Changed
@@ -344,7 +356,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.17...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.18...HEAD
+[0.1.18]: https://github.com/tfindley/oil-blender/compare/v0.1.17...v0.1.18
 [0.1.17]: https://github.com/tfindley/oil-blender/compare/v0.1.16...v0.1.17
 [0.1.16]: https://github.com/tfindley/oil-blender/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/tfindley/oil-blender/compare/v0.1.14...v0.1.15

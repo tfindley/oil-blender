@@ -15,6 +15,7 @@ import { OilPicker } from './OilPicker'
 import { NumberStepper } from './NumberStepper'
 import { SelectedOilsCard } from './SelectedOilsCard'
 import { loadDraft, saveDraft, clearDraft } from '@/lib/blend-storage'
+import { isScorable, isSavable } from '@/lib/blend-rules'
 
 const VOLUME_PRESETS = [10, 30, 50, 100, 200]
 const DILUTION_PRESETS = [
@@ -171,7 +172,8 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
   }, [])
 
   const score = scoreBlend(pairings)
-  const hasBlend = selectedCarriers.length > 0 && selectedEOs.length > 0
+  const hasBlend = isScorable(selectedCarriers.length, selectedEOs.length)
+  const savable = isSavable(selectedCarriers.length, selectedEOs.length)
 
   // Auto-save the draft whenever blend state changes (after hydration)
   useEffect(() => {
@@ -352,8 +354,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
   }
 
   const canSave =
-    selectedCarriers.length > 0 &&
-    selectedEOs.length >= 1 &&
+    savable &&
     blendName.trim().length > 0 &&
     unsafePairings.length === 0 &&
     (avoidPairings.length === 0 || avoidAcknowledged)
@@ -813,9 +814,11 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
                   {saving ? 'Saving…' : 'Save & Get Recipe Card'}
                 </Button>
 
-                {!hasBlend && (
+                {!savable && (
                   <p className="text-center text-xs text-stone-400 dark:text-stone-500">
-                    Add at least one carrier and one essential oil to save your blend.
+                    {selectedCarriers.length === 0 && selectedEOs.length >= 2
+                      ? 'Add a carrier oil — essential-oil-only blends cannot be saved.'
+                      : 'Add at least two oils (with at least one carrier) to save your blend.'}
                   </p>
                 )}
               </div>
