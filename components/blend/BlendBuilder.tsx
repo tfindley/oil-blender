@@ -170,6 +170,9 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const score = scoreBlend(pairings)
+  const hasBlend = selectedCarriers.length > 0 && selectedEOs.length > 0
+
   // Auto-save the draft whenever blend state changes (after hydration)
   useEffect(() => {
     if (!hydrated) return
@@ -185,11 +188,9 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
       dilutionRate,
       blendName: blendName || undefined,
       blendNotes: blendNotes || undefined,
+      grade: hasBlend ? score.grade : undefined,
     })
-  }, [hydrated, selectedCarriers, selectedEOs, totalVolumeMl, dilutionRate, blendName, blendNotes])
-
-  const score = scoreBlend(pairings)
-  const hasBlend = selectedCarriers.length > 0 && selectedEOs.length > 0
+  }, [hydrated, selectedCarriers, selectedEOs, totalVolumeMl, dilutionRate, blendName, blendNotes, hasBlend, score.grade])
 
   function handleReset() {
     setSelectedCarriers([])

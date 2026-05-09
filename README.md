@@ -26,13 +26,17 @@ Oil Blender lets you:
 
 | Feature | Detail |
 |---|---|
-| Blend builder | Up to 5 carriers + up to 5 EOs with live compatibility panel; accordion sections, search/browse picker |
+| Blend builder | Tabbed UI (Carriers / Essentials / Quantities / Save), up to 5 carriers + up to 5 EOs, live compatibility panel, search/browse picker, +/- steppers |
+| Cross-page persistence | In-progress blend stays alive when you navigate to the oil library or compare tool; header BlendCart shows running A–F grade from any page |
 | Multi-carrier blending | Mix multiple carriers (e.g. 50 ml jojoba + 50 ml sweet almond); ml-based input with drift warning + "Fit to Volume" rebalance |
 | Additive carrier model | Volume = carrier volume target; essential oils add on top (matches aromatherapy practice) |
 | Compatibility scoring | A–F grade per blend; EXCELLENT / GOOD / CAUTION / AVOID / UNSAFE per pair; carrier↔carrier, carrier↔EO, and EO↔EO pairings all score equally |
 | Safety hard-blocks | UNSAFE combinations cannot be saved (validated client + server) |
 | Per-oil dilution check | Warns when any EO exceeds its recommended max dilution at the chosen volume |
 | Quantity calculator | ml per carrier, drops per essential oil; "Final mix" hint shows actual total |
+| Oil compare tool | Side-by-side comparison of any two oils with compatibility verdict; persistent slot selection across navigation |
+| Compatibility matrix | Sortable, searchable grid of every pairing in the library; drag-to-scroll on desktop, native pan on touch |
+| Aromatherapy glossary | 42 common terms across therapeutic properties, carrier chemistry, and blending safety |
 | PDF export | Downloadable recipe card with blend data and QR code, generated client-side |
 | Shareable URLs | Persistent `/blend/[id]` URL for every saved blend |
 | View tracking | Each blend page visit increments a view counter |
@@ -40,7 +44,7 @@ Oil Blender lets you:
 | Auto-purge | Non-featured blends inactive for 30+ days are automatically deleted |
 | Oil library | 55 oils (30 essential + 25 carrier) with botanical names, origins, benefits, contraindications |
 | Oil catalogue | Searchable, filterable by type (carrier / essential) |
-| Oil detail pages | Full profiles with all pairings listed |
+| Oil detail pages | Full profiles with all pairings listed; one-click add to blend or compare |
 | Admin panel | Manage oils and blends without touching the database directly |
 
 ---

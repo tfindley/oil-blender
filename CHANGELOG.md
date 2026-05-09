@@ -4,6 +4,94 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.1.17] — 2026-05-09
+
+### Changed
+- **Shared `lib/grade-styles.ts`** — single source for the A/B/C/F badge classes; consumed by both `<BlendCart>` and `<BlendCard>` (replaces two duplicate inline maps).
+- **`<BlendCart>` no longer double-fetches pairings on `/blend`** — `usePathname()` skip lets `<BlendBuilder>` remain the source of truth there. Replaced the `lastScoredKey` ref with a derived `useMemo(idsKey)` and dropped the dead `cancelled` flag (the freshKey staleness check already covers it).
+- **`BlendDraft.grade` typed as `BlendGrade`** (imported from `lib/blend-scorer.ts`) instead of an inline string union; same change applied in `<BlendCart>` and `<BlendCard>`.
+- **`/api/pairings` sets `Cache-Control: private, max-age=60`** — pairings are reference data, safe to cache briefly per-user.
+- **Docs catch-up** — `CHANGELOG.md` backfilled for v0.1.11–v0.1.16; `README.md` features table refreshed (tabs, cart persistence, compare tool, drag-to-scroll matrix, glossary); `app/about/page.tsx` features list updated; `docs/DEVELOPMENT.md` and `AGENTS.md` project structure refreshed with `BlendCart`, `NumberStepper`, `lib/blend-storage`, `lib/compare-storage`, `lib/grade-styles`, `lib/use-drag-scroll`.
+
+## [0.1.16] — 2026-05-09
+
+### Added
+- **In-progress blend persists across pages** — `lib/blend-storage.ts` (localStorage, schema `v: 2`) keeps the current draft alive while the user navigates to `/oils`, `/oils/[id]`, the compare tool, etc. Restored on `/blend` via auto-hydration; cleared on Reset and on successful save.
+- **Header BlendCart widget** — flask icon with two-tone count badge (carriers left, essentials right); click opens a dropdown with per-row remove buttons and the live A–F grade circle. Computes grade in-place (fetches `/api/pairings`) so the badge stays accurate from any page; skips the duplicate fetch on `/blend` where the builder is the source of truth.
+- **Compare slot persistence** — `lib/compare-storage.ts` (`v: 2`) keeps the two compare slots alive across navigation; `pushToCompare` returns `'A' | 'B' | 'full' | 'already'` so `<AddToCompareButton>` can show a Replace popover with named slots when both are taken.
+- **Compare from oil detail page** — `<AddToCompareButton>` lives next to `<AddToBlendButton>` on `/oils/[id]` (kept off the library cards to avoid clutter).
+- **Drag-to-scroll Compatibility Matrix** — `lib/use-drag-scroll.ts` (Pointer Events, skips drag on buttons/links/inputs); `cursor-grab` + `select-none` give the visual cue. Native iOS panning unchanged.
+- **Glossary moved to top nav** (was a link from the About page only).
+
+### Changed
+- **iOS auto-zoom killed across every input** — `text-base sm:text-sm` baseline in shared `Input.tsx` / `Textarea`, `<NumberStepper>`, `<OilPicker>` search, builder/scaler volume inputs.
+- **Right column re-stickied** — `lg:sticky lg:top-20 lg:self-start` (no `max-h`); follows scroll without trapping the cursor.
+- **Compare tool**: custom inline-overlay `<SlotSelector>` replaces the shared `<OilPicker>` — fully isolated state per slot (no cross-talk), search dropdown closes on selection.
+- `<NumberStepper>` hides native number-input spinners.
+- `<QuantityTable>` percentage uses 1-dp + `<1%` threshold to match the Quantities tab (saved-blend page now consistent).
+- `<AddToBlendButton>` / `<AddToCompareButton>` drop the transient `Adding…/Added ✓` flash — go straight to the final label after click.
+
+### Fixed
+- **Hamburger menu tap target** bumped to `p-3` (44 px); `<ThemeToggle>` to `p-2.5`.
+- `<BlendCard>` gains `shadow-sm` to match shared `<Card>`.
+- Header restructure: `<BlendCart>` and `<ThemeToggle>` lifted out of `<MobileMenu>` so neither collapses into the hamburger.
+
+### Security
+- `POST /api/blends` Zod schema bounds previously unbounded fields: `notes` ≤ 2000, `description` ≤ 500, `purpose` ≤ 200. Save-tab textarea / inputs enforce the same via `maxLength` client-side.
+- `/api/cron/purge` `Authorization` comparison made constant-time (matches admin auth).
+
+## [0.1.15] — 2026-05-09
+
+### Changed
+- **Reset button moved into the In Your Blend card header** (right-justified next to the title) — real outlined button with hover-red destructive treatment, only shown when at least one oil is selected. Was a wispy text link in the tab strip.
+
+### Fixed
+- **Tab strip no longer triggers a flicker vertical scrollbar** on hover. Dropped `overflow-x-auto` from the strip — per CSS spec, when one axis is non-`visible` the other becomes `auto`, which created the spurious vertical scrollbar (and the elastic horizontal "bungy" scroll on mobile). With Reset gone and shorter labels in v0.1.14, the strip fits natively.
+
+## [0.1.14] — 2026-05-09
+
+### Fixed
+- **Dilution preset now rescales drops** — clicking 1% / 2% / 3% / 5% used to set `dilutionRate` directly without updating EO percentages, so the displayed `%` column drifted from the preset and the calc was internally inconsistent. New `changeDilution(newRate)` helper rescales EO percentages proportionally; drops derive from percentages so they update in lockstep. Even-distributes when sum is 0; no-ops on the rate alone when no EOs are selected.
+- **Tab labels shortened** so the strip fits on tablet/desktop without horizontal scroll. Mobile (`< sm`) uses single words: `Carriers / Essentials / Quantities / Save`. `flex-1` + `whitespace-nowrap` + `overflow-x-auto` as a safety net.
+- **Reset button visually distinct from tabs** — italic, smaller, ↺ icon, hover-red.
+- **In Your Blend card** is now a vertical list (one oil per row) with hover state and per-row ✕ button, instead of a comma-joined inline list. Reuses `removeCarrier` / `removeEO` so cleanup logic (e.g. clearing `avoidAcknowledged`) runs.
+
+## [0.1.13] — 2026-05-09
+
+### Changed
+- **Tabs replace the accordion** in the blend builder — four tabs in the left column: `1. Carrier Oils` / `2. Essential Oils` / `3. Quantities` / `4. Save Blend`. Tabs 1 and 2 carry a count badge. Both columns sticky on desktop.
+- **`<OilPicker>` is body-only** — card shell, accordion header, chevron, and `isOpen` / `onOpen` / `title` props all removed. Tab content provides its own h2 + subtitle above the picker.
+
+### Added
+- **Merged editable Quantities table** — Carrier table (`Oil | ml stepper | ratio % | ✕`) and EO table (`Oil | drops stepper | ml | % | ✕`) each with a Total row (red on overflow / amber on under for carriers; red on over-max-dilution for EOs). Replaces the old `<SelectedIngredientRow>` + read-only `<QuantityTable>`.
+- **`<NumberStepper>` component** — `[−] [N] [+]` widget with 36 px touch targets, `U+2212` minus, disabled state at min/max, optional `over` red palette. Used for both ml (carrier) and drops (EO).
+- **`<SelectedOilsCard>`** — "In Your Blend" summary card at the top of the right column; comma-separated names per oil type (later changed to a vertical list in v0.1.14).
+- **Save Blend moved to Tab 4** (with the read-only `<QuantityTable>` summary above name/notes/save).
+
+### Removed
+- `components/blend/SelectedIngredientRow.tsx` — replaced by inline table cells in the merged Quantities table.
+
+## [0.1.12] — 2026-05-08
+
+### Changed
+- **Layout restructure** — merged the right-column "Your Blend" card into the left-column Quantities card so editable controls and read-only summary live together. Right column now hosts Compatibility (alerts at top, then grade panel) and a dedicated Save Blend card.
+- **Selected-oil colour neutral** — `<OilPicker>` browse-mode selected card uses amber border + neutral background (was `bg-amber-50` / `dark:bg-amber-950` — read as the same orange-red as the grade-B badge in dark mode). Search-dropdown selected uses stone bg.
+
+### Added
+- **Per-oil dilution warnings rendered in two places** — top of the Compatibility card and inside the Quantities card. `CalculatedIngredient.overMaxDilution` flag lets `<SelectedIngredientRow>` switch to red-bordered styling and `<QuantityTable>` highlight the offending row in red.
+
+## [0.1.11] — 2026-05-08
+
+### Added
+- **App version displayed under the About-page heading**, linked to the GitHub release for that tag (reads `pkg.version` directly from `package.json`).
+
+### Changed
+- **Homepage**: new "Multi-Carrier Blending" feature card; updated "Precise Quantities" copy to describe the additive carrier model.
+- **Features list on About** updated with multi-carrier, additive model, glossary, and max-dilution warnings.
+
+### Tooling
+- `/ship` slash command bumps `package.json` to match the new tag before tagging, so the About page version always matches the deployed release.
+
 ## [0.1.10] — 2026-05-08
 
 ### Changed
@@ -256,7 +344,14 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.10...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.17...HEAD
+[0.1.17]: https://github.com/tfindley/oil-blender/compare/v0.1.16...v0.1.17
+[0.1.16]: https://github.com/tfindley/oil-blender/compare/v0.1.15...v0.1.16
+[0.1.15]: https://github.com/tfindley/oil-blender/compare/v0.1.14...v0.1.15
+[0.1.14]: https://github.com/tfindley/oil-blender/compare/v0.1.13...v0.1.14
+[0.1.13]: https://github.com/tfindley/oil-blender/compare/v0.1.12...v0.1.13
+[0.1.12]: https://github.com/tfindley/oil-blender/compare/v0.1.11...v0.1.12
+[0.1.11]: https://github.com/tfindley/oil-blender/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/tfindley/oil-blender/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/tfindley/oil-blender/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/tfindley/oil-blender/compare/v0.1.7...v0.1.8

@@ -33,5 +33,7 @@ export async function GET(req: NextRequest) {
       reason: p.reason,
     }))
 
-  return NextResponse.json(result)
+  return NextResponse.json(result, {
+    headers: { 'Cache-Control': 'private, max-age=60' },
+  })
 }

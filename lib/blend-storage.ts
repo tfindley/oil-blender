@@ -1,6 +1,8 @@
 // Client-side persistence for the in-progress blend draft.
 // Uses localStorage so users can navigate between /blend and /oils without losing work.
 
+import type { BlendGrade } from '@/lib/blend-scorer'
+
 export interface BlendDraft {
   v: 2
   carriers: Array<{ oilId: string; name: string; volumeMl: number }>
@@ -9,6 +11,7 @@ export interface BlendDraft {
   dilutionRate: number
   blendName?: string
   blendNotes?: string
+  grade?: BlendGrade
 }
 
 const KEY = 'oil-blender:blend-draft'
@@ -31,7 +34,7 @@ function dispatchChange(): void {
   if (typeof window === 'undefined') return
   try {
     window.dispatchEvent(new Event(CHANGE_EVENT))
-  } catch { /* */ }
+  } catch {}
 }
 
 export function saveDraft(draft: BlendDraft): void {
@@ -39,7 +42,7 @@ export function saveDraft(draft: BlendDraft): void {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(draft))
     dispatchChange()
-  } catch { /* quota exceeded or storage disabled — silently skip */ }
+  } catch {}
 }
 
 export function clearDraft(): void {
@@ -47,7 +50,7 @@ export function clearDraft(): void {
   try {
     window.localStorage.removeItem(KEY)
     dispatchChange()
-  } catch { /* */ }
+  } catch {}
 }
 
 export function draftContainsOil(draft: BlendDraft, oilId: string): boolean {

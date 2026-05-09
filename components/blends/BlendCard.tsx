@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { GRADE_STYLES } from '@/lib/grade-styles'
+import type { BlendGrade } from '@/lib/blend-scorer'
 
 interface BlendCardProps {
   id: string
@@ -11,13 +13,6 @@ interface BlendCardProps {
   topOils: string[]
 }
 
-const GRADE_STYLES: Record<string, string> = {
-  A: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
-  B: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
-  C: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300',
-  F: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
-}
-
 export function BlendCard({ id, name, grade, authorName, about, viewCount, isPinned, topOils }: BlendCardProps) {
   return (
     <Link
@@ -27,7 +22,7 @@ export function BlendCard({ id, name, grade, authorName, about, viewCount, isPin
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           {isPinned && <span className="text-sm" title="Pinned blend">📌</span>}
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${GRADE_STYLES[grade] ?? GRADE_STYLES.B}`}>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${GRADE_STYLES[grade as BlendGrade] ?? GRADE_STYLES.B}`}>
             Grade {grade}
           </span>
         </div>

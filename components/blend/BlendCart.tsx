@@ -1,9 +1,23 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { loadDraft, removeFromDraft, DRAFT_CHANGE_EVENT, type BlendDraft } from '@/lib/blend-storage'
+import { usePathname, useRouter } from 'next/navigation'
+import { loadDraft, saveDraft, removeFromDraft, DRAFT_CHANGE_EVENT, type BlendDraft } from '@/lib/blend-storage'
+import { scoreBlend, type BlendGrade, type ScoredPairing } from '@/lib/blend-scorer'
+import { GRADE_STYLES } from '@/lib/grade-styles'
+
+function GradeCircle({ grade }: { grade: BlendGrade }) {
+  return (
+    <span
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-serif text-base font-bold ${GRADE_STYLES[grade]}`}
+      title={`Blend grade ${grade}`}
+      aria-label={`Blend grade ${grade}`}
+    >
+      {grade}
+    </span>
+  )
+}
 
 function FlaskIcon({ filled }: { filled: boolean }) {
   return (
@@ -30,6 +44,7 @@ function FlaskIcon({ filled }: { filled: boolean }) {
 
 export function BlendCart() {
   const router = useRouter()
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [draft, setDraft] = useState<BlendDraft | null>(null)
   const [open, setOpen] = useState(false)
@@ -46,6 +61,46 @@ export function BlendCart() {
       window.removeEventListener(DRAFT_CHANGE_EVENT, update)
     }
   }, [])
+
+  // Stable key for the current oil-set; effect re-runs only when membership changes.
+  const idsKey = useMemo(() => {
+    if (!draft) return ''
+    const ids = [
+      ...draft.carriers.map((c) => c.oilId),
+      ...draft.essentials.map((e) => e.oilId),
+    ]
+    return [...ids].sort().join(',')
+  }, [draft])
+
+  // Keep `grade` fresh whenever the oil-set membership changes. On /blend the BlendBuilder is
+  // the source of truth and writes its own grade — skip here to avoid a duplicate fetch.
+  useEffect(() => {
+    if (pathname === '/blend') return
+    const current = loadDraft()
+    if (!current) return
+    if (current.carriers.length === 0 || current.essentials.length === 0) {
+      if (current.grade !== undefined) saveDraft({ ...current, grade: undefined })
+      return
+    }
+    const ids = [
+      ...current.carriers.map((c) => c.oilId),
+      ...current.essentials.map((e) => e.oilId),
+    ]
+    fetch(`/api/pairings?oilIds=${ids.join(',')}`)
+      .then((r) => (r.ok ? (r.json() as Promise<ScoredPairing[]>) : []))
+      .then((pairings) => {
+        const result = scoreBlend(pairings)
+        const fresh = loadDraft()
+        if (!fresh) return
+        const freshKey = [
+          ...fresh.carriers.map((c) => c.oilId),
+          ...fresh.essentials.map((e) => e.oilId),
+        ].sort().join(',')
+        if (freshKey !== idsKey) return // draft changed during fetch — skip stale result
+        if (fresh.grade !== result.grade) saveDraft({ ...fresh, grade: result.grade })
+      })
+      .catch(() => {})
+  }, [pathname, idsKey])
 
   // Close panel on outside click
   useEffect(() => {
@@ -93,11 +148,14 @@ export function BlendCart() {
       </button>
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-lg border border-stone-200 bg-white shadow-xl dark:border-stone-700 dark:bg-stone-800">
-          <div className="border-b border-stone-100 px-4 py-3 dark:border-stone-700">
-            <p className="font-serif font-semibold text-stone-800 dark:text-stone-200">Your Blend</p>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              {carriers.length} carrier{carriers.length === 1 ? '' : 's'} · {essentials.length} essential oil{essentials.length === 1 ? '' : 's'}
-            </p>
+          <div className="flex items-start justify-between gap-2 border-b border-stone-100 px-4 py-3 dark:border-stone-700">
+            <div>
+              <p className="font-serif font-semibold text-stone-800 dark:text-stone-200">Your Blend</p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                {carriers.length} carrier{carriers.length === 1 ? '' : 's'} · {essentials.length} essential oil{essentials.length === 1 ? '' : 's'}
+              </p>
+            </div>
+            {draft?.grade && <GradeCircle grade={draft.grade} />}
           </div>
           <div className="max-h-72 overflow-y-auto px-4 py-3 text-sm">
             <div className="mb-3">

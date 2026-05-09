@@ -148,17 +148,21 @@ oil-blender/
 │       └── cron/purge/     # Auto-purge endpoint
 ├── components/
 │   ├── analytics/          # GoogleAnalytics component
-│   ├── ui/                 # Button, Badge, Card, Input, Alert, CopyButton
+│   ├── ui/                 # Button, Badge, Card, Input/Textarea, Alert, CopyButton
 │   ├── layout/             # Header, Footer, MobileMenu, ThemeToggle
-│   ├── blend/              # BlendBuilder, CompatibilityPanel, QuantityTable…
+│   ├── blend/              # BlendBuilder (tabs), OilPicker, NumberStepper, BlendCart, CompatibilityPanel, QuantityTable, BlendScaler, SelectedOilsCard…
 │   ├── blends/             # BlendCard (public-facing)
-│   ├── oils/               # OilCard
+│   ├── oils/               # OilCard, AddToBlendButton, AddToCompareButton, OilCompare, CompatibilityMatrix
 │   └── pdf/                # BlendReport (@react-pdf/renderer)
 ├── lib/
 │   ├── prisma.ts           # Prisma client singleton
-│   ├── blend-calculator.ts # Volume/drop calculations
-│   ├── blend-scorer.ts     # A–F blend grading
+│   ├── blend-calculator.ts # Volume/drop calculations; DROPS_PER_ML, pctToDrops, dropsToPct
+│   ├── blend-scorer.ts     # A–F blend grading; exports BlendGrade, ScoredPairing
+│   ├── blend-storage.ts    # localStorage persistence for the in-progress blend draft (v: 2)
+│   ├── compare-storage.ts  # localStorage persistence for the two compare slots (v: 2)
+│   ├── grade-styles.ts     # Shared A/B/C/F badge classes (used by BlendCart and BlendCard)
 │   ├── pairing-utils.ts    # Shared pairing key / map utilities
+│   ├── use-drag-scroll.ts  # Pointer-event drag-to-scroll hook (Compatibility Matrix)
 │   ├── oil-enrichment.ts   # Claude enrichment helper (prompt caching, truncation retry); exports ENRICHMENT_MODEL
 │   └── format-time.ts      # relativeTime(date) helper
 ├── scripts/

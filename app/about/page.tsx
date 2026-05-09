@@ -76,7 +76,9 @@ export default function AboutPage() {
         <h2 className="mb-4 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-200">Features</h2>
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[
-            'Blend builder with live compatibility scoring',
+            'Tabbed blend builder: Carriers / Essentials / Quantities / Save',
+            'In-progress blend persists across pages and reloads',
+            'Header blend cart with live A–F grade from any page',
             'Multi-carrier blending (up to 5) with ml-based input',
             'Up to 5 essential oils per blend, measured in drops',
             'Additive carrier model — Volume = carrier amount, EOs add on top',
@@ -86,6 +88,8 @@ export default function AboutPage() {
             'Per-oil max-dilution safety warnings',
             '30 essential oils + 25 carrier oils in the library',
             'Aromatherapy glossary covering 42 common terms',
+            'Side-by-side oil comparison tool',
+            'Compatibility matrix with drag-to-scroll',
             'Dilution rate guidance (1–5%)',
             'Batch volume presets (10–200ml) with proportional rescale',
             'Persistent shareable blend URLs',
