@@ -22,7 +22,7 @@ export function BlendCard({ id, name, grade, authorName, about, viewCount, isPin
   return (
     <Link
       href={`/blend/${id}`}
-      className="group flex flex-col rounded-xl border border-stone-200 bg-white p-5 transition-all hover:border-amber-300 hover:shadow-md dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-600"
+      className="group flex flex-col rounded-xl border border-stone-200 bg-white p-5 shadow-sm transition-all hover:border-amber-300 hover:shadow-md dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-600"
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">

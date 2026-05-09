@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { pairingKey } from '@/lib/pairing-utils'
+import { useDragScroll } from '@/lib/use-drag-scroll'
 
 type Rating = 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE'
 type OilType = 'ESSENTIAL' | 'CARRIER'
@@ -51,6 +52,8 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
   const [selectedCol, setSelectedCol] = useState<string | null>(null)
   const [rowSearch, setRowSearch] = useState('')
   const [colSearch, setColSearch] = useState('')
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useDragScroll(scrollRef)
 
   const typeFilteredOils = filter === 'all' ? oils : oils.filter((o) => o.type === filter)
 
@@ -172,7 +175,7 @@ export function CompatibilityMatrix({ oils, pairingMap }: Props) {
       </div>
 
       {/* ── Matrix ────────────────────────────────────────────────────── */}
-      <div className="overflow-auto rounded-xl border border-stone-200 dark:border-stone-700">
+      <div ref={scrollRef} className="cursor-grab select-none overflow-auto rounded-xl border border-stone-200 dark:border-stone-700">
         <table className="border-separate" style={{ borderSpacing: 0, tableLayout: 'fixed' }}>
           <thead>
             <tr>

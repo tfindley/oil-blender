@@ -37,7 +37,7 @@ export function QuantityTable({ ingredients, totalVolumeMl }: QuantityTableProps
                 <td className={`px-4 py-2.5 text-right ${pctClass}`}>
                   {i.type === 'CARRIER'
                     ? '—'
-                    : (() => { const pct = Math.round((i.volumeMl / totalVolumeMl) * 100); return pct === 0 ? '<1%' : `${pct}%` })()}
+                    : (() => { const pct = (i.volumeMl / totalVolumeMl) * 100; return pct < 1 ? '<1%' : `${pct.toFixed(1)}%` })()}
                 </td>
                 <td className={`px-4 py-2.5 text-right font-mono ${numClass}`}>{i.volumeMl.toFixed(1)}</td>
                 <td className={`px-4 py-2.5 text-right font-mono ${numClass}`}>

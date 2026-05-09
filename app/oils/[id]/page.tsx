@@ -6,6 +6,8 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { PairingBadge } from '@/components/blend/PairingBadge'
 import { Button } from '@/components/ui/Button'
+import { AddToBlendButton } from '@/components/oils/AddToBlendButton'
+import { AddToCompareButton } from '@/components/oils/AddToCompareButton'
 import type { PairingRating } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -85,9 +87,8 @@ export default async function OilDetailPage({ params }: { params: Promise<{ id: 
               <Button variant="secondary">Buy this oil ↗</Button>
             </a>
           )}
-          <Link href={`/blend?oil=${oil.id}`}>
-            <Button>Add to Blend</Button>
-          </Link>
+          <AddToBlendButton oilId={oil.id} oilName={oil.name} oilType={oil.type as 'CARRIER' | 'ESSENTIAL'} />
+          <AddToCompareButton oilId={oil.id} oilName={oil.name} />
         </div>
       </div>
 

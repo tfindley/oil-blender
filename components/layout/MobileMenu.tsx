@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ThemeToggle } from './ThemeToggle'
 
 const NAV_LINKS = [
   { href: '/blend', label: 'Build a Blend' },
   { href: '/blends', label: 'Blends' },
   { href: '/oils', label: 'Oil Library' },
   { href: '/oils/compare', label: 'Compare' },
+  { href: '/about/glossary', label: 'Glossary' },
   { href: '/about', label: 'About' },
 ]
 
@@ -32,13 +32,12 @@ export function MobileMenu() {
   }, [open])
 
   return (
-    <div ref={ref} className="md:hidden flex items-center gap-1">
-      <ThemeToggle />
+    <div ref={ref} className="md:hidden">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Close menu' : 'Open menu'}
         aria-expanded={open}
-        className="rounded-md p-2 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"
+        className="rounded-md p-3 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"
       >
         {open ? (
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

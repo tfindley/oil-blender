@@ -57,7 +57,7 @@ export function BlendScaler({ originalVolumeMl, dilutionRate, ingredients }: Ble
             const v = parseInt(e.target.value, 10)
             if (!isNaN(v) && v > 0) setViewVolumeMl(v)
           }}
-          className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
+          className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-base sm:text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
         />
       </div>
       <QuantityTable ingredients={calc.ingredients} totalVolumeMl={viewVolumeMl} />

@@ -4,11 +4,11 @@ import { z } from 'zod'
 
 const CreateBlendSchema = z.object({
   name: z.string().min(1).max(100),
-  description: z.string().optional(),
+  description: z.string().max(500).optional(),
   totalVolumeMl: z.number().positive(),
   dilutionRate: z.number().min(0.001).max(0.1),
-  purpose: z.string().optional(),
-  notes: z.string().optional(),
+  purpose: z.string().max(200).optional(),
+  notes: z.string().max(2000).optional(),
   grade: z.enum(['A', 'B', 'C', 'F']),
   ingredients: z
     .array(

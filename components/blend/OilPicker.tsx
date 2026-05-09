@@ -15,7 +15,7 @@ interface OilPickerProps {
   oils: OilSummary[]
   selectedOils: OilSummary[]
   maxCount: number
-  findUnsafe: (oil: OilSummary) => PickerPairing | undefined
+  findUnsafe?: (oil: OilSummary) => PickerPairing | undefined
   onToggle: (oil: OilSummary) => void
 
   mode: 'search' | 'browse'
@@ -24,6 +24,7 @@ interface OilPickerProps {
   onSearchChange: (s: string) => void
 
   footer?: ReactNode
+  singleSelect?: boolean
 }
 
 export function OilPicker({
@@ -38,6 +39,7 @@ export function OilPicker({
   searchValue,
   onSearchChange,
   footer,
+  singleSelect = false,
 }: OilPickerProps) {
   const selectedIds = new Set(selectedOils.map((o) => o.id))
   const filtered = oils.filter((o) =>
@@ -46,7 +48,7 @@ export function OilPicker({
     (o.botanicalName ?? '').toLowerCase().includes(searchValue.toLowerCase())
   )
 
-  const atMax = selectedIds.size >= maxCount
+  const atMax = !singleSelect && selectedIds.size >= maxCount
 
   function handleClick(oil: OilSummary, isSelected: boolean, unsafe: PickerPairing | undefined) {
     if (unsafe) return
@@ -95,13 +97,13 @@ export function OilPicker({
             placeholder="Search by name or botanical name…"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
+            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base sm:text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
           />
           {searchValue && (
             <div className="absolute z-10 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800">
               {filtered.slice(0, 8).map((o) => {
                 const isSelected = selectedIds.has(o.id)
-                const unsafe = !isSelected ? findUnsafe(o) : undefined
+                const unsafe = !isSelected ? findUnsafe?.(o) : undefined
                 const blockedByMax = !isSelected && !unsafe && atMax
                 return (
                   <button
@@ -148,12 +150,12 @@ export function OilPicker({
             placeholder="Filter…"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="mb-3 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
+            className="mb-3 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base sm:text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
           />
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {filtered.map((o) => {
               const isSelected = selectedIds.has(o.id)
-              const unsafe = !isSelected ? findUnsafe(o) : undefined
+              const unsafe = !isSelected ? findUnsafe?.(o) : undefined
               const blockedByMax = !isSelected && !unsafe && atMax
               return (
                 <button

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { pairingKey } from '@/lib/pairing-utils'
+import { loadCompare, saveCompare, COMPARE_CHANGE_EVENT } from '@/lib/compare-storage'
 
 type Rating = 'EXCELLENT' | 'GOOD' | 'CAUTION' | 'AVOID' | 'UNSAFE'
 type OilType = 'ESSENTIAL' | 'CARRIER'
@@ -70,96 +71,199 @@ const RATINGS: Record<Rating, { label: string; dot: string; text: string; bg: st
   },
 }
 
-// ── Searchable combobox ────────────────────────────────────────────────────
+// ── Slot selector: custom inline-overlay picker for the compare page ─────
+// Each slot has fully isolated state (no cross-talk between A and B).
+// Picking an oil closes the overlay and clears the search input.
 
-function OilCombobox({
+function SlotSelector({
+  side,
   oils,
-  selectedId,
+  selectedOil,
   onSelect,
-  label,
-  placeholder,
 }: {
+  side: 'A' | 'B'
   oils: DetailedOil[]
-  selectedId: string | null
+  selectedOil: DetailedOil | null
   onSelect: (id: string | null) => void
-  label: string
-  placeholder: string
 }) {
-  const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const selectedOil = oils.find((o) => o.id === selectedId) ?? null
-  const displayValue = open ? query : (selectedOil?.name ?? query)
+  const [mode, setMode] = useState<'search' | 'browse'>('search')
+  const [search, setSearch] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase()
-    const pool = q
-      ? oils.filter(
-          (o) => o.name.toLowerCase().includes(q) || o.botanicalName.toLowerCase().includes(q),
-        )
-      : oils
-    return pool.slice(0, 15)
-  }, [oils, query])
-
+  // Close on outside click
   useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
+    if (!open) return
+    function handle(e: MouseEvent | TouchEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    if (open) document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
+    document.addEventListener('mousedown', handle)
+    document.addEventListener('touchstart', handle)
+    return () => {
+      document.removeEventListener('mousedown', handle)
+      document.removeEventListener('touchstart', handle)
+    }
   }, [open])
 
+  // Focus the search input when the overlay opens in search mode
+  useEffect(() => {
+    if (open && mode === 'search') inputRef.current?.focus()
+  }, [open, mode])
+
+  function pick(oilId: string) {
+    onSelect(oilId)
+    setOpen(false)
+    setSearch('')
+  }
+
+  const filtered = useMemo(() => {
+    if (!search) return oils
+    const q = search.toLowerCase()
+    return oils.filter(
+      (o) => o.name.toLowerCase().includes(q) || o.botanicalName.toLowerCase().includes(q),
+    )
+  }, [oils, search])
+
   return (
-    <div className="flex-1 min-w-0">
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-        {label}
-      </label>
-      <div ref={containerRef} className="relative">
-        <input
-          type="text"
-          value={displayValue}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setOpen(true)
-            if (!e.target.value) onSelect(null)
-          }}
-          onFocus={() => { setOpen(true); setQuery('') }}
-          placeholder={placeholder}
-          className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 pr-10 text-base md:text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
-        />
-        {selectedOil && !open ? (
+    <div ref={ref} className="relative">
+      {/* Header */}
+      <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 dark:border-stone-700 dark:bg-stone-800">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Oil {side}</p>
+          {selectedOil ? (
+            <p className="truncate font-serif text-base font-semibold text-stone-900 dark:text-stone-100">{selectedOil.name}</p>
+          ) : (
+            <p className="text-sm italic text-stone-400 dark:text-stone-500">No oil selected</p>
+          )}
+        </div>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="shrink-0 rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-800 dark:border-stone-600 dark:text-stone-300 dark:hover:border-amber-600 dark:hover:bg-amber-950/30 dark:hover:text-amber-400"
+          aria-expanded={open}
+        >
+          {selectedOil ? 'Change' : 'Choose oil'}
+        </button>
+        {selectedOil && (
           <button
-            onClick={() => { onSelect(null); setQuery('') }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
-            aria-label="Clear"
+            onClick={() => onSelect(null)}
+            aria-label={`Clear oil ${side}`}
+            className="shrink-0 rounded-full p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 dark:text-stone-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
           >
-            ×
+            ✕
           </button>
-        ) : (
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">▾</span>
-        )}
-        {open && filtered.length > 0 && (
-          <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-stone-200 bg-white shadow-xl dark:border-stone-700 dark:bg-stone-800">
-            {filtered.map((o) => (
-              <li
-                key={o.id}
-                className="cursor-pointer px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-stone-700"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { onSelect(o.id); setQuery(''); setOpen(false) }}
-              >
-                <span className="font-medium text-stone-800 dark:text-stone-100">{o.name}</span>
-                <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{o.botanicalName}</span>
-                <span className={`ml-2 text-xs ${o.type === 'ESSENTIAL' ? 'text-amber-600' : 'text-sky-600'}`}>
-                  {o.type === 'ESSENTIAL' ? 'Essential' : 'Carrier'}
-                </span>
-              </li>
-            ))}
-          </ul>
         )}
       </div>
+
+      {/* Overlay picker (sits above the profile / placeholder below) */}
+      {open && (
+        <div className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xl dark:border-stone-700 dark:bg-stone-800">
+          {/* Mode toggle */}
+          <div className="flex items-stretch border-b border-stone-100 dark:border-stone-700">
+            <button
+              onClick={() => setMode('search')}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                mode === 'search'
+                  ? 'border-b-2 border-amber-500 text-amber-700 dark:text-amber-500'
+                  : 'border-b-2 border-transparent text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
+              }`}
+            >
+              Search
+            </button>
+            <button
+              onClick={() => setMode('browse')}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                mode === 'browse'
+                  ? 'border-b-2 border-amber-500 text-amber-700 dark:text-amber-500'
+                  : 'border-b-2 border-transparent text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
+              }`}
+            >
+              Browse
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="Close picker"
+              className="px-3 py-2 text-stone-400 hover:bg-stone-50 hover:text-stone-700 dark:text-stone-500 dark:hover:bg-stone-700 dark:hover:text-stone-200"
+            >
+              ✕
+            </button>
+          </div>
+
+          {mode === 'search' && (
+            <div className="p-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or botanical name…"
+                className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base sm:text-sm placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500"
+              />
+              <ul className="mt-2 max-h-72 overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <li className="px-2 py-3 text-center text-sm text-stone-400 dark:text-stone-500">No oils match.</li>
+                ) : (
+                  filtered.slice(0, 50).map((o) => {
+                    const isCurrent = selectedOil?.id === o.id
+                    return (
+                      <li key={o.id}>
+                        <button
+                          onClick={() => pick(o.id)}
+                          className={`flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left text-sm transition-colors ${
+                            isCurrent
+                              ? 'bg-stone-100 text-stone-900 dark:bg-stone-700 dark:text-stone-100'
+                              : 'text-stone-800 hover:bg-amber-50 dark:text-stone-200 dark:hover:bg-amber-950/30'
+                          }`}
+                        >
+                          <span className="min-w-0 truncate">
+                            <span className="font-medium">{o.name}</span>
+                            <span className="ml-2 text-xs italic text-stone-400 dark:text-stone-500">{o.botanicalName}</span>
+                          </span>
+                          <span className={`shrink-0 text-xs ${o.type === 'ESSENTIAL' ? 'text-amber-600 dark:text-amber-400' : 'text-sky-600 dark:text-sky-400'}`}>
+                            {o.type === 'ESSENTIAL' ? 'EO' : 'Carrier'}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })
+                )}
+              </ul>
+            </div>
+          )}
+
+          {mode === 'browse' && (
+            <div className="max-h-96 overflow-y-auto p-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {oils.map((o) => {
+                  const isCurrent = selectedOil?.id === o.id
+                  return (
+                    <button
+                      key={o.id}
+                      onClick={() => pick(o.id)}
+                      className={`rounded-lg border p-3 text-left text-sm transition-colors ${
+                        isCurrent
+                          ? 'border-amber-500 bg-white shadow-sm dark:bg-stone-700'
+                          : 'border-stone-200 bg-white hover:bg-amber-50/40 dark:border-stone-600 dark:bg-stone-700 dark:hover:bg-amber-950/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-stone-800 dark:text-stone-100">{o.name}</p>
+                          <p className="truncate text-xs italic text-stone-400 dark:text-stone-500">{o.botanicalName}</p>
+                        </div>
+                        <span className={`shrink-0 text-[10px] font-medium ${o.type === 'ESSENTIAL' ? 'text-amber-600 dark:text-amber-400' : 'text-sky-600 dark:text-sky-400'}`}>
+                          {o.type === 'ESSENTIAL' ? 'EO' : 'Carrier'}
+                        </span>
+                      </div>
+                      <p className="mt-1 truncate text-xs italic text-stone-500 dark:text-stone-400">{o.aroma}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -327,6 +431,43 @@ function OilSlotPlaceholder({ side }: { side: 'A' | 'B' }) {
 export function OilCompare({ oils, pairingMap }: Props) {
   const [aId, setAId] = useState<string | null>(null)
   const [bId, setBId] = useState<string | null>(null)
+  const [hydrated, setHydrated] = useState(false)
+
+  // Hydrate from localStorage on mount + listen for external changes (e.g. AddToCompareButton on the same page in another mounted location)
+  useEffect(() => {
+    const apply = () => {
+      const slots = loadCompare()
+      setAId(slots?.slotA?.id ?? null)
+      setBId(slots?.slotB?.id ?? null)
+    }
+    apply()
+    setHydrated(true)
+    window.addEventListener('storage', apply)
+    window.addEventListener(COMPARE_CHANGE_EVENT, apply)
+    return () => {
+      window.removeEventListener('storage', apply)
+      window.removeEventListener(COMPARE_CHANGE_EVENT, apply)
+    }
+  }, [])
+
+  // Persist on change (skip writes that came from the listener — those are already in storage)
+  useEffect(() => {
+    if (!hydrated) return
+    const current = loadCompare()
+    const aSame = (current?.slotA?.id ?? null) === aId
+    const bSame = (current?.slotB?.id ?? null) === bId
+    if (aSame && bSame) return
+    const next: { v: 2; slotA?: { id: string; name: string }; slotB?: { id: string; name: string } } = { v: 2 }
+    if (aId) {
+      const oil = oils.find((o) => o.id === aId)
+      if (oil) next.slotA = { id: oil.id, name: oil.name }
+    }
+    if (bId) {
+      const oil = oils.find((o) => o.id === bId)
+      if (oil) next.slotB = { id: oil.id, name: oil.name }
+    }
+    saveCompare(next)
+  }, [hydrated, aId, bId, oils])
 
   const oilA = useMemo(() => oils.find((o) => o.id === aId) ?? null, [oils, aId])
   const oilB = useMemo(() => oils.find((o) => o.id === bId) ?? null, [oils, bId])
@@ -341,30 +482,19 @@ export function OilCompare({ oils, pairingMap }: Props) {
   return (
     <div>
       {/* Selectors */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end">
-        <OilCombobox
-          oils={oils}
-          selectedId={aId}
-          onSelect={setAId}
-          label="Oil A"
-          placeholder="Search by name or botanical…"
-        />
-        <div className="hidden sm:flex sm:items-end sm:pb-2.5">
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
+        <SlotSelector side="A" oils={oils} selectedOil={oilA} onSelect={setAId} />
+        <div className="flex items-center justify-center lg:pt-7">
           <button
-            onClick={() => { setAId(bId); setBId(aId) }}
+            onClick={() => { const t = aId; setAId(bId); setBId(t) }}
             title="Swap oils"
-            className="rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-500 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-400 dark:hover:bg-stone-700"
+            disabled={!aId && !bId}
+            className="rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-500 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-600 dark:text-stone-400 dark:hover:bg-stone-700"
           >
             ⇄
           </button>
         </div>
-        <OilCombobox
-          oils={oils}
-          selectedId={bId}
-          onSelect={setBId}
-          label="Oil B"
-          placeholder="Search by name or botanical…"
-        />
+        <SlotSelector side="B" oils={oils} selectedOil={oilB} onSelect={setBId} />
       </div>
 
       {sameOilSelected ? (

@@ -14,6 +14,7 @@ import { QuantityTable } from './QuantityTable'
 import { OilPicker } from './OilPicker'
 import { NumberStepper } from './NumberStepper'
 import { SelectedOilsCard } from './SelectedOilsCard'
+import { loadDraft, saveDraft, clearDraft } from '@/lib/blend-storage'
 
 const VOLUME_PRESETS = [10, 30, 50, 100, 200]
 const DILUTION_PRESETS = [
@@ -67,9 +68,10 @@ interface BlendBuilderProps {
     totalVolumeMl: number
     dilutionRate: number
   }
+  pendingOilId?: string
 }
 
-export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilderProps) {
+export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId }: BlendBuilderProps) {
   const router = useRouter()
 
   const [selectedCarriers, setSelectedCarriers] = useState<SelectedCarrier[]>(initialBlend?.carriers ?? [])
@@ -88,6 +90,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   const [carrierMode, setCarrierMode] = useState<'search' | 'browse'>('search')
   const [activeTab, setActiveTab] = useState<Tab>(initialBlend?.carriers && initialBlend.carriers.length > 0 ? 3 : 1)
   const [avoidAcknowledged, setAvoidAcknowledged] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
 
   const fetchPairings = useCallback(async (ids: string[]) => {
     if (ids.length < 2) { setPairings([]); return }
@@ -100,6 +103,90 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
   useEffect(() => {
     fetchPairings([...selectedCarriers.map((c) => c.oil.id), ...selectedEOs.map((e) => e.oil.id)])
   }, [selectedCarriers.map((c) => c.oil.id).join(','), selectedEOs.map((e) => e.oil.id).join(',')]) // eslint-disable-line
+
+  // Hydrate from localStorage draft on mount, and apply any pending oil from the URL.
+  useEffect(() => {
+    // ?from=<id> takes over the builder; clear any draft so it doesn't merge in.
+    if (initialBlend) {
+      clearDraft()
+      setHydrated(true)
+      return
+    }
+
+    const draft = loadDraft()
+    let nextCarriers = draft
+      ? draft.carriers
+          .map((c) => {
+            const oil = carriers.find((o) => o.id === c.oilId)
+            return oil ? { oil, volumeMl: c.volumeMl } : null
+          })
+          .filter((c): c is { oil: OilSummary; volumeMl: number } => c != null)
+      : []
+    let nextEOs = draft
+      ? draft.essentials
+          .map((e) => {
+            const oil = essentials.find((o) => o.id === e.oilId)
+            return oil ? { oil, percentagePct: e.percentagePct } : null
+          })
+          .filter((e): e is { oil: OilSummary; percentagePct: number } => e != null)
+      : []
+    const nextVolume = draft?.totalVolumeMl ?? 50
+    const nextDilution = draft?.dilutionRate ?? 0.02
+
+    // Apply pending oil from URL (?oil=<id>)
+    let appliedPending = false
+    if (pendingOilId) {
+      const carrier = carriers.find((o) => o.id === pendingOilId)
+      const eo = essentials.find((o) => o.id === pendingOilId)
+      if (carrier && !nextCarriers.some((c) => c.oil.id === carrier.id) && nextCarriers.length < MAX_CARRIERS) {
+        const merged = [...nextCarriers, { oil: carrier, volumeMl: 0 }]
+        const even = nextVolume / merged.length
+        nextCarriers = merged.map((c) => ({ ...c, volumeMl: even }))
+        appliedPending = true
+      } else if (eo && !nextEOs.some((e) => e.oil.id === eo.id) && nextEOs.length < MAX_EOS) {
+        nextEOs = [...nextEOs, { oil: eo, percentagePct: dropsToPct(1, nextVolume) }]
+        appliedPending = true
+      }
+    }
+
+    if (draft || appliedPending) {
+      setSelectedCarriers(nextCarriers)
+      setSelectedEOs(nextEOs)
+      setTotalVolumeMl(nextVolume)
+      setDilutionRate(appliedPending && nextEOs.length > 0
+        ? Math.max(MIN_DILUTION_RATE, nextEOs.reduce((s, e) => s + e.percentagePct, 0) / 100)
+        : nextDilution)
+      if (draft?.blendName) setBlendName(draft.blendName)
+      if (draft?.blendNotes) setBlendNotes(draft.blendNotes)
+      if (nextCarriers.length > 0 || nextEOs.length > 0) setActiveTab(3)
+    }
+
+    // Strip ?oil= from the URL so refresh doesn't re-add the same oil
+    if (pendingOilId) {
+      router.replace('/blend')
+    }
+
+    setHydrated(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Auto-save the draft whenever blend state changes (after hydration)
+  useEffect(() => {
+    if (!hydrated) return
+    if (selectedCarriers.length === 0 && selectedEOs.length === 0 && !blendName && !blendNotes) {
+      clearDraft()
+      return
+    }
+    saveDraft({
+      v: 2,
+      carriers: selectedCarriers.map((c) => ({ oilId: c.oil.id, name: c.oil.name, volumeMl: c.volumeMl })),
+      essentials: selectedEOs.map((e) => ({ oilId: e.oil.id, name: e.oil.name, percentagePct: e.percentagePct })),
+      totalVolumeMl,
+      dilutionRate,
+      blendName: blendName || undefined,
+      blendNotes: blendNotes || undefined,
+    })
+  }, [hydrated, selectedCarriers, selectedEOs, totalVolumeMl, dilutionRate, blendName, blendNotes])
 
   const score = scoreBlend(pairings)
   const hasBlend = selectedCarriers.length > 0 && selectedEOs.length > 0
@@ -120,6 +207,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     setCarrierSearch('')
     setCarrierMode('search')
     setActiveTab(1)
+    clearDraft()
   }
 
   const ingredientInputs = [
@@ -297,6 +385,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
         return
       }
       const { id } = await res.json()
+      clearDraft()
       router.push(`/blend/${id}`)
     } catch {
       setSaveError('Network error. Please try again.')
@@ -317,7 +406,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
       {/* ── Left column / full-width on mobile: tabs ── */}
-      <div className="lg:col-span-2 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto">
+      <div className="lg:col-span-2">
         {/* Tab strip */}
         <div className="flex items-stretch border-b border-stone-200 dark:border-stone-700">
           {tabs.map((t) => (
@@ -448,7 +537,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                       const v = parseInt(e.target.value)
                       if (v >= 5) changeVolume(v)
                     }}
-                    className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
+                    className="w-20 rounded border border-stone-200 bg-white px-2 py-2 text-base sm:text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
                   />
                 </div>
               </div>
@@ -701,6 +790,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   placeholder="e.g. Evening Calm"
                   value={blendName}
                   onChange={(e) => setBlendName(e.target.value)}
+                  maxLength={100}
                 />
 
                 <Textarea
@@ -709,6 +799,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
                   placeholder="Intended use, application method, personal notes…"
                   value={blendNotes}
                   onChange={(e) => setBlendNotes(e.target.value)}
+                  maxLength={2000}
                 />
 
                 {saveError && <Alert variant="unsafe">{saveError}</Alert>}
@@ -733,7 +824,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend }: BlendBuilde
       </div>
 
       {/* ── Right column on desktop / below on mobile: selected oils + compatibility ── */}
-      <div className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:pr-0.5">
+      <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
         <SelectedOilsCard
           carriers={selectedCarriers.map((c) => ({ id: c.oil.id, name: c.oil.name }))}
           essentials={selectedEOs.map((e) => ({ id: e.oil.id, name: e.oil.name }))}

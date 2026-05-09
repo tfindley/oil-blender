@@ -22,8 +22,8 @@ const OIL_SELECT = {
   dilutionRateMax: true,
 } as const
 
-export default async function BlendPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
-  const { from } = await searchParams
+export default async function BlendPage({ searchParams }: { searchParams: Promise<{ from?: string; oil?: string }> }) {
+  const { from, oil: pendingOilId } = await searchParams
 
   const [oils, fromBlendData] = await Promise.all([
     prisma.oil.findMany({ select: OIL_SELECT, orderBy: { name: 'asc' } }),
@@ -89,7 +89,7 @@ export default async function BlendPage({ searchParams }: { searchParams: Promis
           Choose your carrier oils, add essential oils, and see your compatibility score in real time.
         </p>
       </div>
-      <BlendBuilder carriers={carriers} essentials={essentials} initialBlend={initialBlend} />
+      <BlendBuilder carriers={carriers} essentials={essentials} initialBlend={initialBlend} pendingOilId={pendingOilId} />
     </div>
   )
 }

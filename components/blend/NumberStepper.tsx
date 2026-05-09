@@ -30,7 +30,7 @@ export function NumberStepper({
     : 'border-stone-300 bg-stone-50 text-stone-700 hover:bg-stone-100 dark:border-stone-500 dark:bg-stone-700 dark:text-stone-200 dark:hover:bg-stone-600'
   const disabledBtn = 'cursor-not-allowed opacity-40'
 
-  const inputBase = `${inputWidth} border-y px-1 py-1.5 text-center text-sm focus:z-10 focus:outline-none focus:ring-1`
+  const inputBase = `${inputWidth} border-y px-1 py-1.5 text-center text-base sm:text-sm focus:z-10 focus:outline-none focus:ring-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`
   const inputClass = over
     ? `${inputBase} border-red-300 bg-white text-red-800 focus:border-red-500 focus:ring-red-500 dark:border-red-700 dark:bg-red-950/40 dark:text-red-100`
     : `${inputBase} border-stone-300 bg-white text-stone-900 focus:border-amber-500 focus:ring-amber-500 dark:border-stone-500 dark:bg-stone-600 dark:text-stone-100`

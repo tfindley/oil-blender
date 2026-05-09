@@ -15,8 +15,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
   }
 
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${secret}`) {
+  const auth = req.headers.get('authorization') ?? ''
+  const expected = `Bearer ${secret}`
+  const enc = new TextEncoder()
+  const a = enc.encode(auth)
+  const b = enc.encode(expected)
+  let diff = a.length !== b.length ? 1 : 0
+  const len = Math.max(a.length, b.length)
+  for (let i = 0; i < len; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0)
+  if (diff !== 0) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
