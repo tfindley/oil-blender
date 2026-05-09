@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const CreateBlendSchema = z.object({
@@ -22,6 +23,15 @@ const CreateBlendSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const rl = rateLimit(`save:${ip}`, 10, 60_000)
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many saves — try again in a moment.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter ?? 60) } },
+    )
+  }
+
   const body = await req.json()
   const parsed = CreateBlendSchema.safeParse(body)
 

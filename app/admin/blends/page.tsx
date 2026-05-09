@@ -29,7 +29,6 @@ export default async function AdminBlendsPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">Blend Admin</h1>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{blends.length} blends in the database</p>
         </div>
         <Link
           href="/admin/blends/import"

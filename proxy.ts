@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifySessionToken } from '@/lib/admin-auth'
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const secret = process.env.ADMIN_SECRET
   if (!secret) return // no secret set — admin open (dev/local only)
 
@@ -11,18 +12,7 @@ export function proxy(req: NextRequest) {
 
   const token = req.cookies.get('admin_token')?.value
 
-  // Constant-time comparison to prevent timing attacks
-  let match = token !== undefined && token.length === secret.length
-  if (match) {
-    const enc = new TextEncoder()
-    const a = enc.encode(token)
-    const b = enc.encode(secret)
-    let diff = 0
-    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]
-    match = diff === 0
-  }
-
-  if (!match) {
+  if (!(await verifySessionToken(token, secret))) {
     const loginUrl = req.nextUrl.clone()
     loginUrl.pathname = '/admin/login'
     loginUrl.searchParams.set('next', pathname)

@@ -14,6 +14,7 @@ import { QuantityTable } from './QuantityTable'
 import { OilPicker } from './OilPicker'
 import { NumberStepper } from './NumberStepper'
 import { SelectedOilsCard } from './SelectedOilsCard'
+import { FirstVisitHint } from './FirstVisitHint'
 import { loadDraft, saveDraft, clearDraft, DRAFT_CHANGE_EVENT } from '@/lib/blend-storage'
 import { isScorable, isSavable } from '@/lib/blend-rules'
 
@@ -457,6 +458,7 @@ export function BlendBuilder({ carriers, essentials, initialBlend, pendingOilId 
 
       {/* ── Left column / full-width on mobile: tabs ── */}
       <div className="lg:col-span-2">
+        <FirstVisitHint />
         {/* Tab strip */}
         <div className="flex items-stretch border-b border-stone-200 dark:border-stone-700">
           {tabs.map((t) => (

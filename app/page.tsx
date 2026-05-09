@@ -7,25 +7,31 @@ import { BlendCard } from '@/components/blends/BlendCard'
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  const featuredBlends = await prisma.blend.findMany({
-    where: { isHidden: false, OR: [{ isFeatured: true }, { isPinned: true }] },
-    select: {
-      id: true,
-      name: true,
-      grade: true,
-      authorName: true,
-      about: true,
-      viewCount: true,
-      isPinned: true,
-      ingredients: {
-        where: { oil: { type: 'ESSENTIAL' } },
-        include: { oil: { select: { name: true } } },
-        take: 3,
+  const [featuredBlends, carrierCount, essentialCount, pairingCount, communityBlendCount] = await Promise.all([
+    prisma.blend.findMany({
+      where: { isHidden: false, OR: [{ isFeatured: true }, { isPinned: true }] },
+      select: {
+        id: true,
+        name: true,
+        grade: true,
+        authorName: true,
+        about: true,
+        viewCount: true,
+        isPinned: true,
+        ingredients: {
+          where: { oil: { type: 'ESSENTIAL' } },
+          include: { oil: { select: { name: true } } },
+          take: 3,
+        },
       },
-    },
-    orderBy: [{ isPinned: 'desc' }, { viewCount: 'desc' }],
-    take: 6,
-  })
+      orderBy: [{ isPinned: 'desc' }, { viewCount: 'desc' }],
+      take: 6,
+    }),
+    prisma.oil.count({ where: { type: 'CARRIER' } }),
+    prisma.oil.count({ where: { type: 'ESSENTIAL' } }),
+    prisma.oilPairing.count(),
+    prisma.blend.count({ where: { isHidden: false } }),
+  ])
 
   return (
     <div className="flex flex-col">
@@ -52,6 +58,33 @@ export default async function Home() {
               </Button>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Stats strip */}
+      <section className="border-y border-stone-200 bg-white px-4 py-10 dark:border-stone-700 dark:bg-stone-900">
+        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-6 text-center sm:grid-cols-4">
+          <Stat
+            number={carrierCount + essentialCount}
+            label="Oils in the library"
+            sublabel={`${carrierCount} carriers · ${essentialCount} essentials`}
+          />
+          <Stat
+            number={pairingCount}
+            label="Curated pairings"
+            sublabel="Excellent · Good · Caution · Avoid · Unsafe"
+          />
+          <Stat
+            number={communityBlendCount}
+            label="Saved blends"
+            sublabel="Built by the community"
+          />
+          <Stat
+            number="A–F"
+            label="Blend grading"
+            sublabel="Real-time compatibility scoring"
+            isText
+          />
         </div>
       </section>
 
@@ -129,8 +162,8 @@ export default async function Home() {
               },
               {
                 icon: '🌿',
-                title: '55 Oils in the Library',
-                body: '30 essential oils and 25 carrier oils — each with origins, benefits, contraindications, and curated pairing data.',
+                title: `${carrierCount + essentialCount} Oils in the Library`,
+                body: `${essentialCount} essential oils and ${carrierCount} carrier oils — each with origins, benefits, contraindications, and curated pairing data.`,
               },
               {
                 icon: '🛡️',
@@ -164,6 +197,32 @@ export default async function Home() {
           </Link>
         </div>
       </section>
+    </div>
+  )
+}
+
+function Stat({
+  number,
+  label,
+  sublabel,
+  isText,
+}: {
+  number: number | string
+  label: string
+  sublabel?: string
+  isText?: boolean
+}) {
+  return (
+    <div>
+      <div
+        className={`font-serif font-bold text-stone-900 dark:text-stone-100 ${
+          isText ? 'text-3xl sm:text-4xl' : 'text-4xl sm:text-5xl'
+        }`}
+      >
+        {typeof number === 'number' ? number.toLocaleString() : number}
+      </div>
+      <div className="mt-1 text-sm font-medium text-stone-700 dark:text-stone-300">{label}</div>
+      {sublabel && <div className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{sublabel}</div>}
     </div>
   )
 }

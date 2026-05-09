@@ -1,7 +1,9 @@
 'use server'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { rateLimit } from '@/lib/rate-limit'
+import { mintSessionToken } from '@/lib/admin-auth'
 
 export async function adminLogin(_prev: unknown, data: FormData): Promise<{ error: string } | never> {
   const secret = process.env.ADMIN_SECRET
@@ -9,6 +11,15 @@ export async function adminLogin(_prev: unknown, data: FormData): Promise<{ erro
 
   if (!secret) {
     redirect('/admin')
+  }
+
+  const hdrs = await headers()
+  const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+
+  const rl = rateLimit(`login:${ip}`, 5, 60_000)
+  if (!rl.ok) {
+    console.warn(`[admin-login] rate-limited ip=${ip} ts=${new Date().toISOString()}`)
+    return { error: 'Too many attempts. Try again in a minute.' }
   }
 
   // Constant-time comparison
@@ -19,11 +30,12 @@ export async function adminLogin(_prev: unknown, data: FormData): Promise<{ erro
   for (let i = 0; i < 128; i++) diff |= a[i] ^ b[i]
 
   if (diff !== 0) {
+    console.warn(`[admin-login] failed ip=${ip} ts=${new Date().toISOString()}`)
     return { error: 'Incorrect secret.' }
   }
 
   const jar = await cookies()
-  jar.set('admin_token', secret, {
+  jar.set('admin_token', await mintSessionToken(secret), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',

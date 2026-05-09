@@ -21,12 +21,32 @@ interface BlendRow {
 export function AdminBlendActions({ blends }: { blends: BlendRow[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [pending, startTransition] = useTransition()
+  const [query, setQuery] = useState('')
 
-  const allIds = blends.map((b) => b.id)
-  const allSelected = selected.size === blends.length && blends.length > 0
+  // Strip a pasted full URL down to the bare cuid before matching.
+  const normalised = query.trim().split('/').pop()?.toLowerCase() ?? ''
+  const visible = normalised
+    ? blends.filter(
+        (b) =>
+          b.id.toLowerCase().includes(normalised) ||
+          b.name.toLowerCase().includes(normalised) ||
+          (b.authorName ?? '').toLowerCase().includes(normalised),
+      )
+    : blends
+
+  const visibleIds = visible.map((b) => b.id)
+  const allSelected = visible.length > 0 && visibleIds.every((id) => selected.has(id))
 
   function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(allIds))
+    if (allSelected) {
+      const next = new Set(selected)
+      visibleIds.forEach((id) => next.delete(id))
+      setSelected(next)
+    } else {
+      const next = new Set(selected)
+      visibleIds.forEach((id) => next.add(id))
+      setSelected(next)
+    }
   }
 
   function toggle(id: string) {
@@ -61,8 +81,18 @@ export function AdminBlendActions({ blends }: { blends: BlendRow[] }) {
 
   return (
     <div>
-      {/* Bulk action bar */}
+      {/* Search + bulk action bar */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by ID, name, or author…"
+          className="w-72 rounded-md border border-stone-300 bg-white px-3 py-2 text-base sm:text-sm focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+        />
+        <span className="text-xs text-stone-500 dark:text-stone-400">
+          {normalised ? `Showing ${visible.length} of ${blends.length}` : `${blends.length} blend${blends.length === 1 ? '' : 's'}`}
+        </span>
         {selected.size > 0 && (
           <button
             onClick={handleDeleteSelected}
@@ -105,14 +135,14 @@ export function AdminBlendActions({ blends }: { blends: BlendRow[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
-            {blends.length === 0 && (
+            {visible.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-4 py-8 text-center text-sm text-stone-400 dark:text-stone-500">
-                  No blends yet.
+                  {blends.length === 0 ? 'No blends yet.' : 'No blends match your search.'}
                 </td>
               </tr>
             )}
-            {blends.map((b) => (
+            {visible.map((b) => (
               <tr key={b.id} className={`hover:bg-stone-50 dark:hover:bg-stone-700/50 ${selected.has(b.id) ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}`}>
                 <td className="px-3 py-2.5">
                   <input

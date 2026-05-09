@@ -102,6 +102,14 @@ export async function enrichSingleOil(oilId: string): Promise<{ ok: boolean; mes
   }
 }
 
+// `z.string().url()` accepts `javascript:`, `data:`, `vbscript:` schemes — fine
+// at protocol level but dangerous when this URL is later rendered as `<a href>`
+// or `<img src>`. Restrict to http(s) only.
+const httpsOnly = z
+  .string()
+  .url()
+  .refine((u) => /^https?:\/\//i.test(u), 'Must start with http:// or https://')
+
 const OilSchema = z.object({
   name: z.string().min(1),
   botanicalName: z.string().min(1),
@@ -116,8 +124,8 @@ const OilSchema = z.object({
   absorbency: z.string().optional(),
   shelfLifeMonths: z.string().optional(),
   dilutionRateMax: z.string().optional(),
-  buyUrl: z.string().url().optional().or(z.literal('')),
-  imageUrl: z.string().url().optional().or(z.literal('')),
+  buyUrl: httpsOnly.optional().or(z.literal('')),
+  imageUrl: httpsOnly.optional().or(z.literal('')),
   imageAlt: z.string().optional(),
 })
 

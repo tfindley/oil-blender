@@ -4,6 +4,30 @@ All notable changes to Potions & Lotions are documented here.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-09
+
+Public-launch hardening pass: a publicly-reachable site needs more than localhost-grade security. This release closes 7 Dependabot advisories, adds a security-headers baseline (HSTS + CSP report-only), rate-limits both the public save endpoint and the admin login, decouples the admin cookie from `ADMIN_SECRET`, and ships a few class-trial-ready UX touches (homepage stats, admin blend search, first-visit hint).
+
+### Added
+- **Security headers** in `next.config.ts` — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, **`Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`**, and **`Content-Security-Policy-Report-Only`** allowlisting first-party + Google Analytics. Report-only for now so we can watch the violation log without enforcement risk.
+- **Rate limiting** on `POST /api/blends` (10 saves/minute/IP) and `/admin/login` (5 attempts/minute/IP). New `lib/rate-limit.ts` — namespaced in-memory token-bucket; per-instance, swap for Upstash/Redis when scaling beyond one container.
+- **Admin login failure logging** — every failed attempt or rate-limit trip emits `[admin-login] failed/rate-limited ip=… ts=…` to stdout. No DB, no PII beyond IP, grep-able from `docker compose logs`.
+- **Decoupled admin cookie** (`lib/admin-auth.ts`) — replaces "cookie value IS `ADMIN_SECRET`" with a random 32-byte token + HMAC-SHA256 signature. Cookie compromise no longer reveals the secret. Uses Web Crypto API so it works in both Node (login action) and Edge (proxy/middleware) runtimes. Existing admin sessions invalidate on deploy — re-login once.
+- **Tighter URL validation** on Oil admin form — `buyUrl` and `imageUrl` now require `http(s)://`; rejects `javascript:` / `data:` / `vbscript:` URIs that `z.string().url()` accepts by default.
+- **`public/robots.txt`** — disallows `/admin/` and `/api/` for well-behaved crawlers.
+- **"Abuse prevention" privacy card** on About page — discloses transient in-memory IP processing for rate-limiting (UK/EU GDPR transparency).
+- **Homepage stats strip** — live counts of oils (carriers + essentials), curated pairings, community blends, plus the A–F grading callout. Pulled via `Promise.all` of four `prisma.*.count()` calls; the existing "Oils in the Library" feature card now uses dynamic counts too.
+- **Admin blend search** — `/admin/blends` now has a search input that filters by id (the cuid), name, or author. Accepts a pasted full URL — strips the prefix to get the bare cuid. Live "showing N of M" counter; `Select all` operates on the filtered set.
+- **First-visit hint on `/blend`** — dismissable amber banner above the tab strip explains the four-tab flow. Persists dismissal in localStorage.
+- **Footer "Report it on GitHub" link** — channel for class members to report issues without leaving the site.
+
+### Security
+- All 7 Dependabot advisories resolved: 2× `fast-uri` (high) via `npm audit fix`; 4× `hono` (medium/low) and `@hono/node-server` (medium) via `overrides` pinning patched versions; 1× `postcss` (medium) via override pinning ≥ 8.5.10. **`npm audit` now reports 0 vulnerabilities.**
+
+### Operational (verification, not code)
+- Confirm host crontab hits `/api/cron/purge` daily (auto-purge endpoint already shipped — just needs a wired-up cron entry).
+- Confirm reverse proxy (nginx / Cloudflare) returns `301` on `http://` → `https://` so HSTS catches the very first visit too.
+
 ## [0.1.19] — 2026-05-09
 
 ### Fixed
@@ -366,7 +390,8 @@ All notable changes to Potions & Lotions are documented here.
 - GitHub Actions CI/CD: builds and pushes Docker image to `ghcr.io/tfindley/oil-blender` on `v*.*.*` tag push, creates GitHub Release
 - Oil enrichment pipeline (`npm run enrich`) using Claude API for richer AI-generated profiles
 
-[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.1.19...HEAD
+[Unreleased]: https://github.com/tfindley/oil-blender/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tfindley/oil-blender/compare/v0.1.19...v0.2.0
 [0.1.19]: https://github.com/tfindley/oil-blender/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/tfindley/oil-blender/compare/v0.1.17...v0.1.18
 [0.1.17]: https://github.com/tfindley/oil-blender/compare/v0.1.16...v0.1.17

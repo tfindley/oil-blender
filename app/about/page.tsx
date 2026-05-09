@@ -162,6 +162,19 @@ export default function AboutPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
+            <h3 className="mb-2 font-semibold text-stone-800 dark:text-stone-200">Abuse prevention</h3>
+            <div className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
+              <p>
+                To prevent automated abuse, your IP address is briefly held in process memory when
+                you save a blend or attempt to log in to the admin area, against a per-minute rate
+                limit. The address is <strong>never written to disk</strong>, never logged, and
+                never shared with third parties. The in-memory store is cleared on every server
+                restart and stale entries drop out within an hour.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
             <h3 className="mb-2 font-semibold text-stone-800 dark:text-stone-200">Analytics</h3>
             <div className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
               <p>
